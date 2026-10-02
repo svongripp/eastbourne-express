@@ -1,0 +1,1702 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eastbourne Express — book a Sunday boat home</title>
+<meta name="description" content="Prototype booking page for the Sunday Eastbourne (Keats Island) to Horseshoe Bay run. Nothing here is live.">
+<style>
+  :root {
+    --bg: #f7f6f2;
+    --card: #ffffff;
+    --ink: #1c1f22;
+    --muted: #5c6470;
+    --line: #dcd9d1;
+    --accent: #0f5c75;
+    --accent-ink: #ffffff;
+    --soft: #e6f0f3;
+    --tbc: #b8860b;
+    --chart-today: #1272a3;
+    --chart-gain: #c98a1f;
+    --err: #b42318;
+    --radius: 10px;
+    --max: 560px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15181b; --card: #1e2226; --ink: #eef0f2; --muted: #a2aab4;
+      --line: #343a41; --accent: #5cb3cf; --accent-ink: #0d1518; --soft: #22323a; --tbc: #e0b040;
+      --chart-today: #3fa0d0; --chart-gain: #c48520; --err: #f97066;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15181b; --card: #1e2226; --ink: #eef0f2; --muted: #a2aab4;
+    --line: #343a41; --accent: #5cb3cf; --accent-ink: #0d1518; --soft: #22323a; --tbc: #e0b040;
+    --chart-today: #3fa0d0; --chart-gain: #c48520; --err: #f97066;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    padding: 24px 16px 48px;
+  }
+  main { max-width: var(--max); margin: 0 auto; }
+
+  /* ---- header ---- */
+  header { margin-bottom: 20px; }
+  .kicker { color: var(--muted); font-size: 14px; letter-spacing: .02em; text-transform: uppercase; }
+  h1 { font-size: 26px; line-height: 1.2; margin: 4px 0 6px; }
+  .lede { color: var(--muted); margin: 0; }
+
+  /* ---- passenger-question collapsibles ---- */
+  details.q {
+    border-top: 1px solid var(--line);
+  }
+  details.q:last-of-type { border-bottom: 1px solid var(--line); }
+  details.q summary {
+    cursor: pointer; padding: 12px 0; font-weight: 600; list-style: none;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  }
+  details.q summary::-webkit-details-marker { display: none; }
+  details.q summary::after { content: "+"; color: var(--muted); font-weight: 400; font-size: 20px; }
+  details.q[open] summary::after { content: "–"; }
+  details.q .a { padding: 0 0 14px; color: var(--muted); }
+  details.q .a p { margin: 0 0 8px; }
+  details.q .a p:last-child { margin-bottom: 0; }
+  .qs { margin: 18px 0 28px; }
+
+  /* ---- steps ---- */
+  section.step {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 18px 16px; margin-bottom: 16px;
+  }
+  section.step.pending { opacity: .5; }
+  .step-n { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+  h2 { font-size: 20px; margin: 2px 0 12px; }
+  .hint { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+
+  /* ---- calendar ---- */
+  .cal { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--soft); }
+  .cal-head b { font-size: 15px; }
+  .cal-head button {
+    background: none; border: 1px solid var(--line); border-radius: 6px; width: 34px; height: 34px;
+    font-size: 18px; cursor: pointer; color: var(--ink);
+  }
+  .cal-head button:disabled { opacity: .3; cursor: default; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 8px; }
+  .cal-grid .dow { text-align: center; font-size: 12px; color: var(--muted); padding: 4px 0; }
+  .cal-grid .dow.sun { color: var(--accent); font-weight: 600; }
+  .day {
+    aspect-ratio: 1; border: 0; background: none; border-radius: 8px; font-size: 15px;
+    color: var(--muted); cursor: default; position: relative;
+  }
+  .day.open {
+    color: var(--ink); cursor: pointer; background: var(--soft); font-weight: 600;
+  }
+  .day.open:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .day.selected { background: var(--accent); color: var(--accent-ink); }
+  .day.past { opacity: .35; }
+  .day.today::after {
+    content: ""; position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px; border-radius: 50%; background: currentColor;
+  }
+  .legend { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+  .legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--soft); vertical-align: -1px; margin-right: 4px; border: 1px solid var(--line); }
+
+  /* ---- party size ---- */
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; }
+  .row label { font-weight: 600; }
+  .stepper { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .stepper button { width: 40px; height: 40px; border: 0; background: var(--soft); font-size: 20px; cursor: pointer; color: var(--ink); }
+  .stepper button:disabled { opacity: .3; cursor: default; }
+  .stepper output { min-width: 44px; text-align: center; font-weight: 600; font-size: 17px; }
+
+  /* ---- selection summary ---- */
+  .picked {
+    margin-top: 16px; padding: 12px 14px; background: var(--soft); border-radius: 8px; font-size: 15px;
+  }
+  .picked:empty { display: none; }
+
+  /* ---- prototype affordances ---- */
+  .tbc {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .04em;
+    color: var(--tbc); border: 1px dashed var(--tbc); border-radius: 4px; padding: 0 5px; margin-left: 4px;
+    vertical-align: 1px;
+  }
+  /* ---- windows ---- */
+  .windows { display: grid; gap: 8px; }
+  .win {
+    display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center;
+    width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--card); color: var(--ink); padding: 12px 14px; cursor: pointer; font: inherit;
+  }
+  .win:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .win.selected { background: var(--soft); border-color: var(--accent); }
+  .win .name { font-weight: 600; }
+  .win .time { color: var(--muted); font-size: 14px; }
+  .win .name small { font-weight: 400; color: var(--muted); }
+  .win .status { grid-column: 1 / -1; font-size: 13px; color: var(--muted); }
+  .win .bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--line); position: relative; overflow: hidden; }
+  .win .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); }
+  .win .bar b { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink); opacity: .5; }
+  .win .status .go { color: var(--accent); font-weight: 600; }
+  .lastboat-note { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+  .win .boat2 { grid-column: 1 / -1; font-size: 13px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; margin-top: 2px; }
+  .win .boat2 .bar { display: block; margin-top: 6px; }
+  .win .boat2 .b2 { display: block; margin-top: 6px; }
+
+  /* ---- step 3: backups ---- */
+  .first-pick { padding: 12px 14px; background: var(--soft); border-radius: 8px; margin-bottom: 12px; }
+  .first-pick b { display: block; }
+  .first-pick span { color: var(--muted); font-size: 14px; }
+  .backups { display: grid; gap: 8px; }
+  .backups label {
+    display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px 14px; cursor: pointer;
+  }
+  .backups label:has(input:checked) { background: var(--soft); border-color: var(--accent); }
+  .backups input { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
+  .backups .time { margin-left: auto; color: var(--muted); font-size: 14px; }
+  .rule { margin: 14px 0 0; padding: 12px 14px; border-left: 3px solid var(--accent); color: var(--muted); font-size: 15px; }
+  .rule p { margin: 0 0 6px; } .rule p:last-child { margin: 0; }
+
+  /* ---- texts mock ---- */
+  .seg { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 14px; }
+  .seg button {
+    border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px;
+    padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .sms { display: grid; gap: 14px; }
+  .sms .when { font-size: 12px; color: var(--muted); text-align: center; }
+  .sms .bubble {
+    background: var(--soft); border-radius: 16px 16px 16px 4px; padding: 10px 14px; max-width: 88%;
+    font-size: 15px; line-height: 1.4; white-space: pre-line;
+  }
+  .sms .why { font-size: 13px; color: var(--muted); margin: -6px 0 0 6px; font-style: italic; }
+  .sms .why::before { content: "why: "; font-style: normal; font-weight: 600; }
+
+  /* ---- revenue projection ---- */
+  .assume { display: grid; gap: 10px; margin: 0 0 18px; }
+  .assume label { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; font-size: 14px; align-items: center; }
+  .assume label span:first-child { color: var(--muted); }
+  .assume output { font-weight: 600; text-align: right; min-width: 3.5em; }
+  .assume input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+  .assume h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 8px 0 0; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 18px; }
+  .kpi { background: var(--soft); border-radius: 8px; padding: 10px 12px; }
+  .kpi .v { font-size: 22px; font-weight: 700; line-height: 1.1; }
+  .kpi .l { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .chart { display: grid; gap: 12px; margin: 0 0 8px; }
+  .chart .row { display: grid; grid-template-columns: 9em 1fr; gap: 10px; align-items: center; margin: 0; }
+  @media (max-width: 600px) { .chart .row { grid-template-columns: 1fr; gap: 4px; } }
+  .chart .row .lab { font-size: 14px; }
+  .chart .track { height: 22px; display: flex; gap: 2px; padding-right: 5.5em; }   /* room for the end label */
+  .chart .seg { height: 100%; border-radius: 0 4px 4px 0; position: relative; cursor: default; min-width: 2px; }
+  .chart .seg.today { background: var(--chart-today); border-radius: 4px 0 0 4px; }
+  .chart .seg.gain { background: var(--chart-gain); border-radius: 0; }
+  .chart .seg.end { border-radius: 0 4px 4px 0; }
+  .sgrid { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); gap: 6px 8px; align-items: center; margin: 4px 0 14px; font-size: 14px; }
+  .sgrid .sh { font-weight: 600; text-align: center; font-size: 13px; line-height: 1.2; }
+  .sgrid .sh small { display: block; font-weight: 400; color: var(--muted); }
+  .sgrid .sgh { grid-column: 1 / -1; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 10px 0 0; font-weight: 700; }
+  .sgrid .sl { color: var(--muted); }
+  .sgrid .st { display: flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .sgrid .st button { width: 28px; height: 30px; border: 0; background: var(--soft); color: var(--ink); font-size: 16px; cursor: pointer; flex: none; }
+  .sgrid .st button:disabled { opacity: .3; cursor: default; }
+  .sgrid .st output { flex: 1; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; min-width: 1.8em; }
+  @media (max-width: 520px) {
+    .sgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .sgrid .corner { display: none; }
+    .sgrid .sl { grid-column: 1 / -1; margin-top: 4px; }
+  }
+  .chart .seg .dl { position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .chart .seg.today .dl { left: auto; right: 6px; margin: 0; color: #fff; }
+  .legend2 { display: flex; gap: 16px; font-size: 13px; color: var(--muted); margin: 0 0 14px; }
+  .legend2 i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 5px; }
+  .tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--bg); font-size: 12px; padding: 6px 8px; border-radius: 6px; display: none; z-index: 20; white-space: nowrap; }
+  .breakdown { font-size: 14px; color: var(--muted); margin: 0; padding-left: 18px; }
+  .breakdown li { margin: 2px 0; }
+  table.tv { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+  table.tv th, table.tv td { text-align: right; padding: 4px 6px; border-top: 1px solid var(--line); }
+  table.tv th:first-child, table.tv td:first-child { text-align: left; }
+
+  /* Elements that only exist in the fill-discount scenario */
+  .disc { display: none; }
+  body.discount .disc { display: revert; }
+  body.discount details.disc { display: block; }
+  body.discount .flat { display: none; }
+  .price-line { margin: 10px 0 0; font-weight: 600; color: var(--accent); }
+
+  /* ---- demo variations (not part of the product): top of the booking tab ---- */
+  .variations { border: 1px dashed var(--line); border-radius: var(--radius); background: var(--card); padding: 0 14px; margin: 0 0 22px; }
+  .variations summary { cursor: pointer; list-style: none; padding: 10px 24px 10px 0; position: relative; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 13px; color: var(--muted); }
+  .variations summary::-webkit-details-marker { display: none; }
+  .variations summary::after { content: "+"; position: absolute; right: 0; top: 9px; font-size: 18px; line-height: 1; }
+  .variations[open] summary::after { content: "–"; }
+  .variations .tag { font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 11px; color: var(--ink); }
+  .var-grid { display: grid; gap: 10px; }
+  .var { display: grid; grid-template-columns: 6.2em 1fr; gap: 8px; align-items: center; }
+  .var-l { font-size: 13px; font-weight: 600; }
+  .var .seg { margin: 0; }
+  .var .seg button { font-size: 13px; padding: 5px 10px; }
+  .var-note { font-size: 12px; color: var(--muted); margin: 10px 0 12px; }
+
+  /* ---- price breakdown ---- */
+  .price-sub { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
+  table.cost { width: 100%; border-collapse: collapse; font-size: 15px; color: var(--ink); margin: 0 0 12px; }
+  table.cost td { padding: 5px 0; border-top: 1px solid var(--line); vertical-align: top; }
+  table.cost td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
+  table.cost td small { display: block; color: var(--muted); font-size: 13px; }
+  table.cost tr.total td { font-weight: 700; border-top: 2px solid var(--ink); }
+
+  /* ---- tabs: the passenger's page and Eric and Jenny's model ---- */
+  .tabs {
+    display: flex; gap: 4px; max-width: var(--max); margin: 0 auto 22px; padding: 4px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+  }
+  .tabs button {
+    flex: 1; border: 0; background: none; color: var(--muted); font: inherit; font-size: 15px; font-weight: 600;
+    padding: 8px 12px; border-radius: 999px; cursor: pointer; line-height: 1.2;
+  }
+  .tabs button small { display: block; font-weight: 400; font-size: 12px; }
+  .tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+  .tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  main[hidden] { display: none; }
+
+  /* ---- step 4: who's travelling ---- */
+  .fields { display: grid; gap: 14px; }
+  .field { display: grid; gap: 4px; }
+  .field > span { font-weight: 600; font-size: 15px; }
+  .field > span small { font-weight: 400; color: var(--muted); }
+  .field input {
+    width: 100%; font: inherit; font-size: 16px; color: var(--ink); background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+  }
+  .field input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+  .field input[aria-invalid="true"] { border-color: var(--err); }
+  .field .err { color: var(--err); font-size: 13px; min-height: 0; }
+  .field .err:empty { display: none; }
+  .check { display: flex; gap: 10px; align-items: flex-start; margin: 16px 0 4px; cursor: pointer; font-size: 15px; }
+  .check input { width: 20px; height: 20px; accent-color: var(--accent); flex: none; margin: 1px 0 0; }
+
+  /* ---- step 5: the deal, the price, the card ---- */
+  ol.deal { margin: 0 0 16px; padding-left: 20px; }
+  ol.deal li { margin: 0 0 6px; }
+  .cardmock { border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin: 4px 0 12px; }
+  .cardmock .lock { font-size: 13px; color: var(--muted); margin: 0 0 10px; display: flex; justify-content: space-between; gap: 8px; }
+  .cardmock .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .charge { margin: 0 0 14px; padding: 10px 12px; background: var(--soft); border-radius: 8px; font-size: 15px; }
+  .cta {
+    width: 100%; border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-ink);
+    font: inherit; font-size: 17px; font-weight: 600; padding: 14px; cursor: pointer;
+  }
+  .cta:disabled { opacity: .4; cursor: default; }
+  .cta:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .demo-note { font-size: 13px; color: var(--muted); margin: 10px 0 0; text-align: center; }
+
+  /* ---- booked: the confirmation ---- */
+  #step-done { border: 2px solid var(--accent); }
+  .done-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
+  dl.conf { display: grid; grid-template-columns: 8.5em 1fr; gap: 0; margin: 0 0 14px; font-size: 15px; }
+  dl.conf dt, dl.conf dd { margin: 0; padding: 7px 0; border-top: 1px solid var(--line); }
+  dl.conf dt { color: var(--muted); font-size: 14px; }
+  dl.conf dd small { display: block; color: var(--muted); font-size: 13px; }
+  .invite { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 12px; background: var(--soft); border-radius: 8px; font-size: 15px; margin: 0 0 12px; }
+  .invite code { font: inherit; font-weight: 600; }
+  .smallbtn { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  pre.json { font-size: 12px; line-height: 1.45; background: var(--soft); border-radius: 8px; padding: 10px 12px; overflow-x: auto; margin: 0; color: var(--ink); }
+
+  /* ---- bags and gear: weight estimate ---- */
+  .gear { margin-top: 18px; }
+  .gear .row { margin-top: 0; }
+  .gear output { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .gear input[type=range] { width: 100%; accent-color: var(--accent); margin: 8px 0 6px; }
+  .gear-bar { position: relative; height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+  .gear-bar .free { position: absolute; left: 0; top: 0; bottom: 0; background: var(--soft); }
+  .gear-bar .in { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); }
+  .gear-bar .over { position: absolute; top: 0; bottom: 0; background: var(--chart-gain); }
+  .gear-bar .tick { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--card); }
+  .gear-bar .limit { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); opacity: .6; }
+  .gear-note { font-size: 14px; margin: 8px 0 0; }
+  .gear-note b.over { color: var(--chart-gain); }
+
+  /* ---- dogs on the booking side ---- */
+  .dogs.busy { color: var(--tbc); font-weight: 600; }
+
+  /* ---- business model tab (full width) ---- */
+  main.wide { max-width: 1200px; }
+  main.wide .lede { max-width: 70ch; }
+  .kpis.k5 { grid-template-columns: repeat(5, 1fr); }
+  .kpi .v.pos { color: var(--chart-today); }
+  @media (max-width: 760px) { .kpis.k5 { grid-template-columns: repeat(2, 1fr); } .kpis.k5 .kpi:last-child { grid-column: 1 / -1; } }
+  .panels { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; margin-bottom: 28px; }
+  @media (max-width: 900px) { .panels { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 16px; }
+  .panel h2 { font-size: 18px; }
+  .runcost { margin: 12px 0 0; padding: 10px 12px; background: var(--soft); border-radius: 8px; font-size: 14px; }
+  h2.group { font-size: 20px; margin: 8px 0 4px; }
+  p.group { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); gap: 16px; margin-bottom: 28px; align-items: start; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+  .card.big { grid-column: 1 / -1; }
+  .card-head { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; }
+  .card h3 { font-size: 16px; line-height: 1.3; margin: 0; }
+  .card .src { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+  .card .net { text-align: right; }
+  .card .net b { display: block; font-size: 20px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .card .net small { font-size: 12px; color: var(--muted); }
+  .card .why { font-size: 14px; color: var(--muted); margin: 10px 0 12px; }
+  .card.off .net b, .card.off .lines, .card.off .extra { opacity: .45; }
+  .card-body { display: grid; gap: 4px; }
+  @media (min-width: 900px) { .card.big .card-body { grid-template-columns: 3fr 2fr; gap: 24px; } }
+  .lines { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .lines li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-top: 1px solid var(--line); }
+  .lines li:first-child { border-top: 0; }
+  .lines li b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .lines li.info { color: var(--muted); }
+  .card .note { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+  .card .note:empty { display: none; }
+  .card .extra:empty { display: none; }
+  .card .extra { margin-bottom: 10px; }
+  .card details.q { border-top: 1px solid var(--line); border-bottom: 0; margin-top: 10px; }
+  .assume .tbc { justify-self: start; }
+  .fuelgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .fuelgrid div { background: var(--soft); border-radius: 6px; padding: 6px 8px; font-size: 12px; color: var(--muted); }
+  .fuelgrid div b { display: block; font-size: 15px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .fuelgrid div.now { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .switch {
+    appearance: none; -webkit-appearance: none; width: 40px; height: 24px; border-radius: 12px; margin: 0;
+    background: var(--line); position: relative; cursor: pointer; flex: none; transition: background .15s;
+  }
+  .switch::after {
+    content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .15s;
+  }
+  .switch:checked { background: var(--accent); }
+  .switch:checked::after { transform: translateX(16px); }
+  .switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .reset { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+
+  /* net-a-year chart: one measure, diverging around zero (blue adds, orange takes away) */
+  .mchart { display: grid; gap: 4px; }
+  .mrow { display: grid; grid-template-columns: minmax(8em, 15em) 1fr 5.5em; gap: 10px; align-items: center; cursor: pointer; padding: 3px 0; border-radius: 6px; }
+  .mrow:hover { background: var(--soft); }
+  .mrow .lab { font-size: 14px; }
+  .mrow .trk { position: relative; height: 20px; }
+  .mrow .zero { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--muted); opacity: .6; }
+  .mrow .bar { position: absolute; top: 2px; bottom: 2px; min-width: 2px; }
+  .mrow .bar.pos { background: var(--chart-today); border-radius: 0 4px 4px 0; }
+  .mrow .bar.neg { background: var(--chart-gain); border-radius: 4px 0 0 4px; }
+  .mrow .val { text-align: right; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .mrow.off { opacity: .45; }
+  .mrow.off .val::after { content: " off"; font-weight: 400; font-size: 12px; color: var(--muted); }
+  @media (max-width: 600px) { .mrow { grid-template-columns: 7.5em 1fr 4.8em; gap: 6px; } .mrow .lab { font-size: 13px; } }
+</style>
+</head>
+<body>
+<nav class="tabs" role="tablist" aria-label="Views">
+  <button type="button" role="tab" id="tab-btn-booking" aria-controls="tab-booking" data-tab="booking">Booking page<small>what passengers see</small></button>
+  <button type="button" role="tab" id="tab-btn-model" aria-controls="tab-model" data-tab="model">Business model<small>for Eric and Jenny</small></button>
+</nav>
+
+<main id="tab-booking" role="tabpanel" aria-labelledby="tab-btn-booking">
+
+  <!-- Demo variations: for showing Eric and Jenny the pricing and window stories. Not part of the product. -->
+  <details class="variations" id="variations" open>
+    <summary><span class="tag">Demo variations</span><span id="var-sum"></span></summary>
+    <div class="var-grid">
+      <div class="var"><span class="var-l">Fuel</span>
+        <div class="seg" data-var="fuel"><button type="button" data-v="flat">Flat surcharge</button><button type="button" data-v="tracked">Tracks diesel</button></div></div>
+      <div class="var"><span class="var-l">Windows</span>
+        <div class="seg" data-var="scheme"><button type="button" data-v="clock">A · same names all year</button><button type="button" data-v="lastboat">B · + "Before sunset"</button></div></div>
+      <div class="var"><span class="var-l">Demand</span>
+        <div class="seg" data-var="busy"><button type="button" data-v="0">Typical</button><button type="button" data-v="1">Busy: 20 want the last boat</button></div></div>
+    </div>
+    <p class="var-note">Prototype for showing Eric and Jenny. Nothing here is live.</p>
+  </details>
+
+  <header>
+    <div class="kicker">Sunshine Coast Water Taxi</div>
+    <h1>Eastbourne Express — the Sunday boat home</h1>
+    <p class="lede">Eastbourne (Keats Island) → Horseshoe Bay, direct. About 30 minutes on the water.</p>
+    <p class="price-line" id="price-line"></p>
+    <p class="price-sub" id="price-sub"></p>
+  </header>
+
+  <!-- Passenger's questions on arrival: for the first-timer or the person just checking. -->
+  <div class="qs" aria-label="Before you book">
+    <details class="q">
+      <summary>Just checking how this works?</summary>
+      <div class="a">
+        <p>Pick your Sunday and how many of you are travelling. Then pick the part of the day you'd like to leave — morning, midday, or afternoon — rather than an exact time.</p>
+        <p>We set the exact boat time once we know how many people want each window, and text it to you by 6 pm Saturday. <span class="tbc">TBC: confirm-by time</span></p>
+        <p>Nothing is charged until your boat is confirmed.</p>
+      </div>
+    </details>
+    <details class="q">
+      <summary>What does it cost?</summary>
+      <div class="a">
+<div id="cost-a"></div>
+      </div>
+    </details>
+    <details class="q disc">
+      <summary>How do we all get the $30 fare?</summary>
+      <div class="a">
+        <p>Fill the boat. A boat has 12 seats; once <span id="fill-at">10</span> or more people are booked on it, the fare drops to $30 for everyone on it. Fuel and the booking fee stay the same. <span class="tbc">TBC: 10 or 12?</span></p>
+        <p>The easiest way is to get your neighbours on the same window. You'll see how close each window is to the $30 fare when you pick one, and your card is only charged the final price once the boat is confirmed.</p>
+      </div>
+    </details>
+    <details class="q">
+      <summary>Will the boat actually run?</summary>
+      <div class="a">
+        <p>A boat runs when about 7 people book the same window. You'll see how close each window is to running before you choose, and if yours hasn't reached 7 by Thursday 6 pm <span class="tbc">TBC</span>, we'll text you your options.</p>
+        <p>If your window doesn't fill, we'll offer you the nearest boat that is running, or let your spot go at no charge. Your call.</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- STEP 1 — the passenger's mental model: "I have a date in mind, and I know roughly who's coming." -->
+  <section class="step" id="step-date">
+    <div class="step-n">Step 1</div>
+    <h2>Which Sunday are you heading home?</h2>
+    <p class="hint">Highlighted days have boats. Long weekends run on the Monday.</p>
+
+    <div class="cal" id="cal"></div>
+    <p class="legend"><span class="sw"></span> boat days</p>
+
+    <div class="row">
+      <label for="party">How many of you?</label>
+      <div class="stepper">
+        <button type="button" id="party-minus" aria-label="fewer">−</button>
+        <output id="party" for="party-minus party-plus">1</output>
+        <button type="button" id="party-plus" aria-label="more">+</button>
+      </div>
+    </div>
+    <div class="row">
+      <label for="dogs">Any dogs coming? <small style="font-weight:400;color:var(--muted)">free</small></label>
+      <div class="stepper">
+        <button type="button" id="dogs-minus" aria-label="fewer dogs">−</button>
+        <output id="dogs" for="dogs-minus dogs-plus">0</output>
+        <button type="button" id="dogs-plus" aria-label="more dogs">+</button>
+      </div>
+    </div>
+    <div class="gear">
+      <div class="row"><label for="gear">Bags and gear, roughly?</label><output id="gear-out" for="gear"></output></div>
+      <input type="range" id="gear" min="0" max="500" step="10" value="50" aria-describedby="gear-note">
+      <div class="gear-bar" id="gear-bar" aria-hidden="true"></div>
+      <p class="gear-note" id="gear-note" aria-live="polite"></p>
+      <p class="hint" style="margin:6px 0 0">A guess is fine. A weekend bag is about 20 lb, a full cooler of food about 50, a 24 of beer about 20. Dogs don't count.</p>
+    </div>
+
+    <details class="q" style="margin-top:14px">
+      <summary>Who counts as a passenger?</summary>
+      <div class="a">
+        <p>Everyone who takes a seat, including kids. Dogs, bikes and bags don't count, but the boat holds 12 people plus their stuff, so give us a rough weight for your gear above.</p>
+        <p>More than 12 of you? Give us a call and we'll sort a second boat.</p>
+      </div>
+    </details>
+
+    <div class="picked" id="picked" aria-live="polite"></div>
+  </section>
+
+  <!-- Later steps: placeholders until thought through -->
+  <!-- STEP 2 — the passenger's mental model: "how late can I stay?" — pick a window, not a time -->
+  <section class="step pending" id="step-window">
+    <div class="step-n">Step 2</div>
+    <h2>When would you like to leave?</h2>
+    <p class="hint">Pick the part of the day. We set the exact boat time once we know who's coming.</p>
+
+    <div class="windows" id="windows"></div>
+    <p class="lastboat-note" id="lastboat-note"></p>
+
+    <details class="q" style="margin-top:14px">
+      <summary>When will I know my boat time?</summary>
+      <div class="a">
+        <p>By 6 pm Saturday <span class="tbc">TBC</span>, by text. Most people want the last boat, so we set its time first and work back from there: the more of you in a window, the more likely it runs exactly when you'd like.</p>
+        <p>Each window shows how many are booked and how many more it needs. A boat runs at 7.</p>
+      </div>
+    </details>
+    <details class="q" style="margin-top:0">
+      <summary>Why does it show dogs?</summary>
+      <div class="a">
+        <p>Dogs ride free, and that isn't changing. But some boats end up with a lot of them, and not every dog enjoys the company. Each window shows how many dogs are booked so far. If yours would rather a quieter ride, pick a window with fewer.</p>
+      </div>
+    </details>
+    <details class="q disc">
+      <summary>Which window gets us the $30 fare?</summary>
+      <div class="a">
+        <p>Whichever one you can fill. The bar on each window shows the mark for the $30 fare. Pick the window your neighbours are on, or bring them to yours.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- STEP 3 — strength of preference is behavioural: the backups you tick are how firm you are. -->
+  <section class="step pending" id="step-flex">
+    <div class="step-n">Step 3</div>
+    <h2>Happy to take another boat if it helps one fill?</h2>
+    <p class="hint">Your first pick stays your first pick. Tick anything else that would also work.</p>
+
+    <div class="first-pick" id="first-pick"></div>
+    <div class="backups" id="backups"></div>
+
+    <div class="rule" id="rule"></div>
+
+    <details class="q" style="margin-top:14px">
+      <summary>Why would I tick a backup?</summary>
+      <div class="a">
+        <p>Boats run when enough people want the same window. If yours is one short and the next one over is running, a backup gets you home instead of a refund.</p>
+        <p class="disc">It's also how boats fill — and a full boat is how everyone on it gets the $30 fare.</p>
+        <p>Tick nothing and we take that as "only this window works for me". That's fine too. Your first pick is never moved to make room for someone else — seats go to the first 12 who book.</p>
+      </div>
+    </details>
+    <details class="q" style="margin-top:0">
+      <summary>What if more people want my window than fit on one boat?</summary>
+      <div class="a">
+        <p>The first 12 to book have the seats. After that you can join the waitlist: you'll see your place in line, and you're next up if someone cancels. If enough people are waiting, a second boat may be added — that's the skipper's call, not a promise.</p>
+        <p>Tick a backup so waiting isn't your only way home.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- STEP 4 — who's travelling. The mobile is the whole channel: boat time, check-in, swaps. No account. -->
+  <section class="step pending" id="step-contact">
+    <div class="step-n">Step 4</div>
+    <h2>Who's the lead passenger?</h2>
+    <p class="hint">We text the boat time and any changes to this number. No app, no account.</p>
+    <div class="fields">
+      <label class="field"><span>Name</span>
+        <input id="f-name" name="lead_name" autocomplete="name" placeholder="First and last name"></label>
+      <label class="field"><span>Mobile</span>
+        <input id="f-mobile" name="lead_mobile" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="604 555 0123" aria-describedby="mobile-err">
+        <small class="err" id="mobile-err" aria-live="polite"></small></label>
+      <label class="field"><span>Email <small>optional, for a receipt</small></span>
+        <input id="f-email" name="email" type="email" autocomplete="email" placeholder="you@example.com"></label>
+    </div>
+    <label class="check"><input type="checkbox" id="f-optin" name="extra_runs_optin"><span>Also text me when extra boats or new runs are added.</span></label>
+    <p class="hint" style="margin:0 0 0 30px">Texts about this booking come either way. Reply STOP to the extras any time.</p>
+    <details class="q" style="margin-top:14px">
+      <summary>Booking for someone else?</summary>
+      <div class="a">
+        <p>Put the traveller's name and mobile here, so the boat texts reach the person on the dock. You can still pay with your own card at the next step.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- STEP 5 — the deal in four sentences, the price, and a card on file. Charged when the boat is confirmed. -->
+  <section class="step pending" id="step-pay">
+    <div class="step-n">Step 5</div>
+    <h2>Check the deal and add a card</h2>
+    <ol class="deal" id="deal"></ol>
+    <table class="cost" id="pay-sum"></table>
+    <div class="cardmock" aria-label="Card details (demo)">
+      <p class="lock"><span>Card</span><span>Secured by Square on the real page</span></p>
+      <div class="fields">
+        <label class="field"><span>Card number</span><input inputmode="numeric" autocomplete="off" placeholder="1234 1234 1234 1234"></label>
+        <div class="two">
+          <label class="field"><span>Expiry</span><input inputmode="numeric" autocomplete="off" placeholder="MM / YY"></label>
+          <label class="field"><span>CVC</span><input inputmode="numeric" autocomplete="off" placeholder="123"></label>
+        </div>
+        <label class="field"><span>Postal code</span><input autocomplete="off" placeholder="V0N 1V0"></label>
+      </div>
+    </div>
+    <p class="charge" id="charge-note"></p>
+    <button type="button" class="cta" id="hold" disabled>Hold my spot</button>
+    <p class="demo-note" id="hold-why">Add a name and mobile at step 4 first.</p>
+  </section>
+
+  <!-- BOOKED — the confirmation a person can read and an agent can parse. -->
+  <section class="step" id="step-done" hidden tabindex="-1">
+    <div class="done-badge"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="currentColor"/><path d="M4.5 8.2l2.3 2.3 4.7-4.9" stroke="var(--card)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="done-badge"></span></div>
+    <h2 id="done-h" style="margin-top:6px"></h2>
+    <p class="hint" id="done-sub"></p>
+    <dl class="conf" id="conf"></dl>
+    <div class="invite"><span>Bring a friend:</span><code id="invite-link">eastbourneexpress.ca/j/K7Q2</code><button type="button" class="smallbtn" id="copy-link">Copy link</button></div>
+    <details class="q">
+      <summary>This booking as data (for your assistant)</summary>
+      <div class="a"><pre class="json" id="booking-json"></pre></div>
+    </details>
+    <p class="demo-note">Demo: nothing was charged and no text was sent. <button type="button" class="smallbtn" id="change-booking">Change something</button></p>
+  </section>
+
+  <!-- Demo: the texts a passenger would get for the booking above, on the real dates for that Sunday. -->
+  <section class="step" id="texts">
+    <div class="step-n">After you book</div>
+    <h2>The texts you'd get</h2>
+    <p class="hint"><span id="texts-for">For the booking above, on the real dates.</span> Pick how the week goes:</p>
+    <div class="seg" id="story-seg"></div>
+    <div class="sms" id="sms"></div>
+  </section>
+
+</main>
+
+<!-- Business model: Eric and Jenny's view. Full width. Every idea is a card with its own sliders. -->
+<main id="tab-model" class="wide" role="tabpanel" aria-labelledby="tab-btn-model" hidden>
+  <header>
+    <div class="kicker">For Eric and Jenny</div>
+    <h1>What more could the year be worth?</h1>
+    <p class="lede">Nine ideas for earning more or spending less, each with its own sliders. These are generalizations, not forecasts: every number is a guess until Eric and Jenny move it to the real one. Switch an idea off to take it out of the total.</p>
+  </header>
+
+  <div class="kpis k5">
+    <div class="kpi"><div class="v" id="k-today"></div><div class="l">Sunday Express today, a year (from Bookeo)</div></div>
+    <div class="kpi"><div class="v" id="k-rev"></div><div class="l">new revenue</div></div>
+    <div class="kpi"><div class="v" id="k-cost"></div><div class="l">cost of running it</div></div>
+    <div class="kpi"><div class="v" id="k-saved"></div><div class="l">costs saved</div></div>
+    <div class="kpi"><div class="v pos" id="k-net"></div><div class="l">net change a year</div></div>
+  </div>
+  <p class="hint" id="k-fee" style="margin:-8px 0 18px"></p>
+
+  <div class="panels">
+    <section class="panel">
+      <h2>Where the money is</h2>
+      <p class="hint">Net a year for each idea: new revenue plus costs saved, minus what it costs to run. Blue adds to the year, orange takes away. Click a row to jump to its card.</p>
+      <div class="mchart" id="mchart"></div>
+      <details class="q" style="margin-top:14px">
+        <summary>The numbers as a table</summary>
+        <div class="a"><table class="tv" id="mtable"></table></div>
+      </details>
+    </section>
+    <section class="panel">
+      <h2>Running costs every idea shares</h2>
+      <p class="hint">Fuel, skipper and wear feed every card below. Move them once, here.</p>
+      <div class="assume" id="shared"></div>
+      <p class="runcost" id="runcost"></p>
+      <p style="margin:12px 0 0"><button type="button" class="reset" id="model-reset">Reset these costs</button></p>
+    </section>
+  </div>
+
+  <h2 class="group">Earn more</h2>
+  <p class="group">More runs, fuller boats, and seats sold on trips that happen anyway.</p>
+  <div class="cards" id="cards-earn"></div>
+
+  <h2 class="group">Spend less, protect the margin</h2>
+  <p class="group">Fuel and wear are the costs that move. These ideas go after them.</p>
+  <div class="cards" id="cards-save"></div>
+</main>
+<div class="tip" id="tip"></div>
+
+<script>
+  // ---- Pricing scenario. Fill discount is the hypothesis to test first. The small-boat premium
+  //      ladder is parked; code flag only. Fuel and the booking fee sit on top of the fare:
+  //      fuel is either a flat surcharge or tracks diesel (both read from the Business model tab);
+  //      the booking fee is Tim's, $1 to start, $2 once people are used to the service.
+  const PRICE = 35, DISCOUNT_PRICE = 30, FILL_AT = 10;   // FILL_AT: TBC with Eric (10 or 12)
+  const FLAGS = { fillDiscount: false, premium: false, scheme: 'clock', fuel: 'flat', fee: 1, busy: false };
+  try {
+    // Fill discount parked 2026-09-30 (full boats are heavy boats; Eric's wear problem). Code kept;
+    // only ?discount=1 turns it back on for a demo.
+    FLAGS.fillDiscount = new URLSearchParams(location.search).get('discount') === '1';
+    FLAGS.scheme = localStorage.getItem('scenario.scheme') || 'clock';
+    FLAGS.fuel = localStorage.getItem('scenario.fuel') || 'flat';
+    FLAGS.busy = localStorage.getItem('scenario.busy') === '1';
+    // Booking fee fixed at $1 for the demo (2026-09-30); $2 later, once people are used to the service.
+  } catch (e) {}
+  document.getElementById('fill-at').textContent = FILL_AT;
+
+  const VAR_VALUE = { fuel: () => FLAGS.fuel, fee: () => String(FLAGS.fee), disc: () => FLAGS.fillDiscount ? '1' : '0', scheme: () => FLAGS.scheme, busy: () => FLAGS.busy ? '1' : '0' };
+  document.querySelectorAll('.variations .seg').forEach(seg => seg.querySelectorAll('button').forEach(b => b.onclick = () => {
+    const k = seg.dataset.var, v = b.dataset.v;
+    if (k === 'disc') FLAGS.fillDiscount = v === '1';
+    else if (k === 'fee') FLAGS.fee = +v;
+    else if (k === 'busy') { FLAGS.busy = v === '1'; story = null; }
+    else FLAGS[k] = v;
+    if (k === 'scheme') { state.window = null; state.backups.clear(); }
+    applyScenario();
+  }));
+  function applyScenario() {
+    document.body.classList.toggle('discount', FLAGS.fillDiscount);
+    document.querySelectorAll('.variations .seg').forEach(seg => seg.querySelectorAll('button').forEach(b =>
+      b.setAttribute('aria-pressed', b.dataset.v === VAR_VALUE[seg.dataset.var]())));
+    document.getElementById('var-sum').textContent = [FLAGS.fuel === 'flat' ? 'flat fuel' : 'fuel tracks diesel',
+      ...(FLAGS.fillDiscount ? ['fill discount'] : []), `windows ${FLAGS.scheme === 'clock' ? 'A' : 'B'}`, ...(FLAGS.busy ? ['busy Sunday'] : [])].join(' · ');
+    try {
+      localStorage.setItem('scenario.fillDiscount', FLAGS.fillDiscount ? '1' : '0');
+      localStorage.setItem('scenario.scheme', FLAGS.scheme);
+      localStorage.setItem('scenario.fuel', FLAGS.fuel);
+      localStorage.setItem('scenario.busy', FLAGS.busy ? '1' : '0');
+    } catch (e) {}
+    renderWindows(); renderBackups(); renderPicked(); renderTexts();
+    renderModel();   // also re-renders the price, since tracked fuel reads the model's sliders
+  }
+
+  // ---- What a passenger pays, per person: fare + fuel + booking fee.
+  const price$ = n => Math.abs(n - Math.round(n)) < 0.005 ? '$' + Math.round(n) : '$' + n.toFixed(2);
+  // Fuel at cost: this week's diesel × litres for the trip (counting the boat's empty run back),
+  // shared across an average boat. Also used by the model's fuel card.
+  const trackedFuel = (S, f) => S.diesel * S.litres * (1 + f.empty) / f.ppl;
+  const fuelCharge = () => FLAGS.fuel === 'flat' ? M.fuel.flat : trackedFuel(M.shared, M.fuel);
+  const perPerson = fare => fare + fuelCharge() + FLAGS.fee;
+
+  function renderPrice() {
+    const fuel = fuelCharge(), fee = FLAGS.fee, S = M.shared, f = M.fuel, tracked = FLAGS.fuel === 'tracked';
+    document.getElementById('price-line').textContent = FLAGS.fillDiscount
+      ? `${price$(perPerson(PRICE))} per person, or ${price$(perPerson(DISCOUNT_PRICE))} each when the boat fills.`
+      : `${price$(perPerson(PRICE))} per person, one way.`;
+    document.getElementById('price-sub').textContent =
+      `$${PRICE} fare${FLAGS.fillDiscount ? ` ($${DISCOUNT_PRICE} when full)` : ''} + ${price$(fuel)} fuel${tracked ? " at this week's diesel price" : ''} + $${fee} booking fee`;
+    const litres = Math.round(S.litres * (1 + f.empty));
+    const fuelWhy = tracked
+      ? `<p><b>Fuel is charged at what it costs.</b> This week marine diesel is ${price$(S.diesel)} a litre. A trip burns about ${litres} litres${f.empty ? ", counting the boat's run back" : ''}, shared across an average boat of ${f.ppl}: ${price$(fuel)} each. When diesel goes down, so does this line. It's reset every Monday <span class="tbc">TBC</span>, and the fuel price on the day you book is the one you pay.</p>`
+      : `<p><b>Fuel is a flat ${price$(fuel)} per person</b> <span class="tbc">TBC: ask Eric</span>, on top of the fare. The price you see when you book is the price you pay.</p>`;
+    document.getElementById('cost-a').innerHTML = `
+      <table class="cost">
+        <tr><td>Fare${FLAGS.fillDiscount ? `<small>$${DISCOUNT_PRICE} when the boat fills</small>` : ''}</td><td>$${PRICE}</td></tr>
+        <tr><td>Fuel<small>${tracked ? "this week's diesel price" : 'flat surcharge'}</small></td><td>${price$(fuel)}</td></tr>
+        <tr><td>Booking fee</td><td>$${fee}</td></tr>
+        <tr class="total"><td>Per person, one way${FLAGS.fillDiscount ? `<small>${price$(perPerson(DISCOUNT_PRICE))} when the boat fills</small>` : ''}</td><td>${price$(perPerson(PRICE))}</td></tr>
+      </table>
+      ${fuelWhy}
+      <p><b>Weight:</b> ${FREE_LB} lb of bags and gear per person rides free. Over that, it's $${BLOCK_FEE} for each ${BLOCK_LB} lb, or part of it, for the whole booking. A rough guess is fine.</p>
+      <p><b>The $${fee} booking fee</b> per person pays for the booking system and the texts you get about your boat.</p>
+      <p>Kids <span class="tbc">TBC: kids' fare</span>. Dogs and bikes ride free. <span class="tbc">TBC: ask Eric</span></p>
+      <p>${FLAGS.fillDiscount ? `We never charge more than ${price$(perPerson(PRICE))}, and nothing` : 'Nothing'} is charged until your boat is confirmed.</p>`;
+  }
+
+  // ---- Fake operator calendar: the operator opens days; Sundays are the default, not the rule.
+  const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+  const HORIZON_DAYS = 365;   // long, so the demo can show every season
+  const EXTRA_OPEN = ['2026-10-12']; // Thanksgiving Monday
+  const iso = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  function isOpen(d) {
+    const diff = (d - TODAY) / 864e5;
+    if (diff < 0 || diff > HORIZON_DAYS) return false;
+    return d.getDay() === 0 || EXTRA_OPEN.includes(iso(d));
+  }
+
+  // ---- Calendar (month view, single select)
+  const state = { month: new Date(TODAY.getFullYear(), TODAY.getMonth(), 1), date: null, party: 1, dogs: 0, gear: 50, window: null, backups: new Set() };
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const cal = document.getElementById('cal');
+
+  function renderCal() {
+    const m = state.month;
+    const first = new Date(m.getFullYear(), m.getMonth(), 1);
+    const daysIn = new Date(m.getFullYear(), m.getMonth()+1, 0).getDate();
+    const lastMonth = new Date(TODAY.getFullYear(), TODAY.getMonth() + 12, 1);
+    let html = `<div class="cal-head">
+      <button type="button" id="prev" ${m <= new Date(TODAY.getFullYear(), TODAY.getMonth(), 1) ? 'disabled' : ''}>‹</button>
+      <b>${MONTHS[m.getMonth()]} ${m.getFullYear()}</b>
+      <button type="button" id="next" ${m >= lastMonth ? 'disabled' : ''}>›</button>
+    </div><div class="cal-grid">`;
+    html += DOW.map((d,i) => `<div class="dow ${i===0?'sun':''}">${d}</div>`).join('');
+    for (let i = 0; i < first.getDay(); i++) html += '<div></div>';
+    for (let day = 1; day <= daysIn; day++) {
+      const d = new Date(m.getFullYear(), m.getMonth(), day);
+      const open = isOpen(d);
+      const cls = ['day', open ? 'open' : '', d < TODAY ? 'past' : '', iso(d) === iso(TODAY) ? 'today' : '',
+                   state.date && iso(d) === iso(state.date) ? 'selected' : ''].join(' ');
+      html += `<button type="button" class="${cls}" data-iso="${iso(d)}" ${open ? '' : 'disabled'} aria-pressed="${state.date && iso(d)===iso(state.date)}">${day}</button>`;
+    }
+    html += '</div>';
+    cal.innerHTML = html;
+    document.getElementById('prev').onclick = () => { state.month = new Date(m.getFullYear(), m.getMonth()-1, 1); renderCal(); };
+    document.getElementById('next').onclick = () => { state.month = new Date(m.getFullYear(), m.getMonth()+1, 1); renderCal(); };
+    cal.querySelectorAll('.day.open').forEach(b => b.onclick = () => {
+      const [y,mo,da] = b.dataset.iso.split('-').map(Number);
+      state.date = new Date(y, mo-1, da); state.window = null; state.backups.clear();
+      renderCal(); renderWindows(); renderPicked();
+    });
+  }
+
+  // ---- Daylight as data. Approximate sunset for Howe Sound on the 15th of each month (local time,
+  //      minutes after midnight); interpolated by day. Good enough for a demo.
+  const SUNSET = [1010, 1055, 1160, 1205, 1245, 1275, 1265, 1220, 1160, 1100, 995, 975];
+  const LAST_BOAT_MARGIN = 60;   // minutes before sunset the last boat leaves Eastbourne — TBC with Eric
+  function sunsetMin(d) {
+    const m = d.getMonth(), day = d.getDate();
+    const a = SUNSET[m], b = SUNSET[(m + 1) % 12];
+    const t = day < 15 ? (day - 15) / 30 : (day - 15) / 30;
+    const prev = SUNSET[(m + 11) % 12];
+    return day < 15 ? prev + (a - prev) * (1 + t) : a + (b - a) * t;
+  }
+  function lastBoatMin(d) { return Math.floor((sunsetMin(d) - LAST_BOAT_MARGIN) / 15) * 15; }
+  const ordinal = n => n + (['th','st','nd','rd'][(n % 100 > 10 && n % 100 < 14) ? 0 : Math.min(n % 10, 4) % 4] || 'th');
+  const fmt = mins => {
+    const h = Math.floor(mins / 60), m = mins % 60, ap = h >= 12 ? 'pm' : 'am';
+    return `${((h + 11) % 12) + 1}${m ? ':' + String(m).padStart(2,'0') : ''} ${ap}`;
+  };
+
+  // Window sets. Names are the same all year; the day's last boat trims the list.
+  const BASE = [
+    { key: 'morning',   name: 'Morning',   start: 9*60,  end: 11*60 },   // 9 am: after the latest sunrise (~8:05, late Dec); nobody leaves earlier on a Sunday
+    { key: 'midday',    name: 'Midday',    start: 11*60, end: 14*60 },
+    { key: 'afternoon', name: 'Afternoon', start: 14*60, end: 17*60 },
+    { key: 'evening',   name: 'Evening',   start: 17*60, end: 20*60 + 30 },
+  ];
+  function windowsFor(d) {
+    const L = lastBoatMin(d);
+    if (FLAGS.scheme === 'clock') {
+      // A: ranges only. Keep windows with at least an hour before the last boat; the last one ends at the last boat.
+      const ws = BASE.filter(w => w.start <= L - 60).map(w => ({ ...w }));
+      ws[ws.length - 1].end = L;
+      ws[ws.length - 1].last = true;
+      return ws;
+    }
+    // B: ranges + "Last boat" as its own pick at a stated time. Ranges stop an hour short of it.
+    const ws = BASE.filter(w => w.start <= L - 90).map(w => ({ ...w }));
+    ws[ws.length - 1].end = L - 60;
+    ws.push({ key: 'last', name: 'Before sunset', sub: 'the last boat', start: L, end: L, point: true, last: true });
+    return ws;
+  }
+
+  // Fake demand, stable per date + window, skewed toward the last window (that's what cottagers want).
+  const MIN_TO_RUN = 7, SEATS = 12;
+  function fakeBooked(d, w, idx, n) {
+    // Demo "Busy" demand: 20 people want the last boat: 12 aboard, 8 waiting, enough for a second boat.
+    if (FLAGS.busy && idx === n - 1) return 20;
+    const seed = (d.getDate() * 7 + d.getMonth() * 3 + idx * 5) % 9;
+    const weight = idx === n - 1 ? 5 : idx === n - 2 ? 3 : 1;
+    let booked = Math.floor((seed + weight * 1.4) / 2) + (idx === n - 1 ? 2 : 0);
+    // Busy Sundays: the last window overflows one boat, so a second boat is forming.
+    if (idx === n - 1 && d.getDate() % 3 === 0) booked += 8;
+    return Math.min(SEATS * 2 - 1, booked);
+  }
+  // Fake dogs booked per window. Dogs ride free; the count is there so people can pick a quieter boat.
+  const DOGS_BUSY = 4;
+  function fakeDogs(d, idx) { return (d.getDate() * 5 + d.getMonth() + idx * 3) % 6; }
+  function dogLine(n) {
+    const mine = state.dogs, total = n + mine;
+    if (n === 0) return mine ? `<span class="dogs">no other dogs yet</span>` : `<span class="dogs">no dogs yet</span>`;
+    const txt = `${n} dog${n === 1 ? '' : 's'} booked${mine ? ` (${total} with yours)` : ''}`;
+    return total >= DOGS_BUSY ? `<span class="dogs busy">${txt} · lots of dogs</span>` : `<span class="dogs">${txt}</span>`;
+  }
+  // A window's status line + bar, for one boat. `booked` is the count on this boat only.
+  function boatStatus(booked, seatsLeftLabel = true) {
+    const toRun = Math.max(0, MIN_TO_RUN - booked), toDisc = Math.max(0, FILL_AT - booked);
+    let status = booked === 0 ? 'Nobody booked yet — be the first'
+      : toRun > 0 ? `${booked} booked · <span class="go">${toRun} more to run</span>`
+      : booked >= SEATS ? `<span class="go">Full</span> · ${booked} booked`
+      : `<span class="go">Running</span> · ${booked} booked · ${SEATS - booked} seats left`;
+    if (FLAGS.fillDiscount && booked > 0) status += toDisc > 0 ? ` · ${toDisc} more for ${price$(perPerson(DISCOUNT_PRICE))} each` : ` · <span class="go">${price$(perPerson(DISCOUNT_PRICE))} each</span>`;
+    const bar = `<span class="bar"><i style="width:${Math.min(1, booked / SEATS) * 100}%"></i><b style="left:${MIN_TO_RUN / SEATS * 100}%"></b>${FLAGS.fillDiscount ? `<b style="left:${FILL_AT / SEATS * 100}%"></b>` : ''}</span>`;
+    return { status, bar };
+  }
+
+  function renderWindows() {
+    const box = document.getElementById('windows'), note = document.getElementById('lastboat-note');
+    if (!state.date) { box.innerHTML = ''; note.textContent = ''; return; }
+    const ws = windowsFor(state.date), L = lastBoatMin(state.date);
+    box.innerHTML = ws.map((w, i) => {
+      const booked = fakeBooked(state.date, w, i, ws.length);
+      const overflow = booked > SEATS;
+      const b1 = boatStatus(Math.min(booked, SEATS));
+      const time = w.point ? `about ${fmt(w.start)}` : `${fmt(w.start)} – ${fmt(w.end)}`;
+      const sub = w.sub ? ` <small>· ${w.sub}</small>` : '';
+      let boat2 = '';
+      if (overflow) {
+        const waiting = booked - SEATS;
+        const enough = waiting >= MIN_TO_RUN;
+        boat2 = `<span class="boat2"><b>Full: join the waitlist.</b> ${waiting} waiting, so you'd be ${ordinal(waiting + 1)} in line.
+          <span class="bar"><i style="width:${Math.min(1, waiting / SEATS) * 100}%"></i><b style="left:${MIN_TO_RUN / SEATS * 100}%"></b></span>
+          <span class="b2"><b>Second boat:</b> ${enough
+            ? `<span class="go">${waiting} waiting, enough to run one.</span> Jenny decides by Thursday 6 pm. If it runs, everyone waiting moves onto it, in order.`
+            : `${MIN_TO_RUN - waiting} more waiting and Jenny can add one. Her call, no promise.`}</span></span>`;
+      }
+      return `<button type="button" class="win ${state.window === w.key ? 'selected' : ''}" data-key="${w.key}" aria-pressed="${state.window === w.key}">
+        <span class="name">${w.name}${sub}</span><span class="time">${time}</span>
+        ${b1.bar}
+        <span class="status">${b1.status} · ${dogLine(fakeDogs(state.date, i))}</span>
+        ${boat2}
+      </button>`;
+    }).join('');
+    note.textContent = FLAGS.scheme === 'clock'
+      ? `Last boat on this date leaves about ${fmt(L)} (before sunset).`
+      : `The last boat leaves about an hour before sunset — ${fmt(L)} on this date.`;
+    box.querySelectorAll('.win').forEach(b => b.onclick = () => {
+      state.window = b.dataset.key; state.backups.clear(); story = null;
+      renderWindows(); renderBackups(); renderPicked(); renderTexts();
+      document.getElementById('step-flex').classList.remove('pending');
+    });
+  }
+
+  // ---- Step 3: backups. The rule text is the deal, in plain words, so an agent can read it too.
+  function renderBackups() {
+    const fp = document.getElementById('first-pick'), box = document.getElementById('backups'), rule = document.getElementById('rule');
+    if (!state.date || !state.window) { fp.innerHTML = ''; box.innerHTML = ''; rule.innerHTML = ''; return; }
+    const ws = windowsFor(state.date);
+    const first = ws.find(w => w.key === state.window);
+    const timeOf = w => w.point ? `about ${fmt(w.start)}` : `${fmt(w.start)} – ${fmt(w.end)}`;
+    const idx = ws.indexOf(first);
+    const booked = fakeBooked(state.date, first, idx, ws.length);
+    const waitPos = booked > SEATS ? booked - SEATS + 1 : booked === SEATS ? 1 : 0;
+    fp.innerHTML = waitPos
+      ? `<b>Waitlist for ${first.name} — you'd be ${ordinal(waitPos)} in line</b><span>${timeOf(first)}</span>`
+      : `<b>First pick: ${first.name}</b><span>${timeOf(first)}</span>`;
+    box.innerHTML = ws.filter(w => w.key !== state.window).map(w => `
+      <label><input type="checkbox" data-key="${w.key}" ${state.backups.has(w.key) ? 'checked' : ''}>
+        <span>${w.name}</span><span class="time">${timeOf(w)}</span></label>`).join('');
+    box.querySelectorAll('input').forEach(cb => cb.onchange = () => {
+      cb.checked ? state.backups.add(cb.dataset.key) : state.backups.delete(cb.dataset.key);
+      renderBackups(); renderPicked(); renderTexts();
+    });
+    const names = ws.filter(w => state.backups.has(w.key)).map(w => w.name);
+    const firm = names.length === 0;
+    const notice = `we'll text you by Thursday 6 pm <span class="tbc">TBC</span> and you won't be charged`;
+    if (waitPos) {
+      rule.innerHTML = firm
+        ? `<p><b>Only ${first.name} works for you.</b> You're ${ordinal(waitPos)} in line. If a seat opens or a second boat is added, you're on it. If not, ${notice}.</p>`
+        : `<p><b>${first.name} if a seat opens or a second boat is added</b> — you're ${ordinal(waitPos)} in line. Otherwise we'll put you on ${names.join(' or ')}.</p>
+           <p>If none of those run either, ${notice}.</p>`;
+    } else {
+      rule.innerHTML = firm
+        ? `<p><b>Only ${first.name} works for you.</b> If it runs, you're on it. If it doesn't, ${notice}.</p>`
+        : `<p><b>${first.name} first.</b> If it doesn't run, we'll put you on ${names.join(' or ')} instead.</p>
+           <p>If none of those run either, ${notice}.</p>`;
+    }
+    if (LIVE_STEPS) document.getElementById('step-contact').classList.remove('pending');
+    renderPay();
+  }
+
+  // ---- The texts. Dates are relative to the chosen Sunday. The italic "why" lines are for the
+  //      demo (explaining each message to Eric and Jenny), not something a passenger sees.
+  let story = null;   // null = pick from the window's fake state
+  const segBox = document.getElementById('story-seg');
+  const STORIES = {
+    boat: [['early', 'Boat confirmed early'], ['slow', 'Fills during the week'], ['fail', "Doesn't fill"]],
+    wait: [['second', 'Second boat added'], ['seat', 'A seat opens'], ['nosecond', 'No second boat']],
+  };
+  function toMin(t) { const m = /(\d+)(?::(\d+))? (am|pm)/.exec(t); const h = +m[1] % 12 + (m[3] === 'pm' ? 12 : 0); return h * 60 + (+m[2] || 0); }
+
+  // Until a date and window are picked, the texts use an example booking so they can be shown any time.
+  function sampleDate() { const d = new Date(TODAY); d.setDate(d.getDate() + 7); while (!isOpen(d)) d.setDate(d.getDate() + 1); return d; }
+  function renderTexts() {
+    const box = document.getElementById('sms'), sample = !state.date || !state.window;
+    const D = sample ? sampleDate() : state.date, ws = windowsFor(D);
+    const w = sample ? ws[ws.length - 1] : ws.find(x => x.key === state.window), idx = ws.indexOf(w);
+    const party = sample ? 2 : state.party, dogs = sample ? 0 : state.dogs, bk = sample ? new Set() : state.backups;
+    const booked = fakeBooked(D, w, idx, ws.length), full = booked >= SEATS;
+    const waiting = Math.max(0, booked - SEATS), place = waiting + 1, withYou = waiting + party;
+    const set = full ? STORIES.wait : STORIES.boat;
+    if (story && !set.some(([k]) => k === story)) story = null;
+    const s = story || (full ? (withYou >= MIN_TO_RUN ? 'second' : 'seat') : booked >= MIN_TO_RUN ? 'early' : 'slow');
+    segBox.innerHTML = set.map(([k, l]) => `<button type="button" data-story="${k}" aria-pressed="${k === s}">${l}</button>`).join('');
+    segBox.querySelectorAll('button').forEach(b => b.onclick = () => { story = b.dataset.story; renderTexts(); });
+
+    const day = n => new Date(D.getFullYear(), D.getMonth(), D.getDate() + n);
+    const dd = (d, t) => d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' }) + (t ? ' · ' + t : '');
+    const sun = dd(D), ppl = `${party} ${party === 1 ? 'person' : 'people'}${dogs ? ` + ${dogs} dog${dogs === 1 ? '' : 's'}` : ''}`;
+    document.getElementById('texts-for').textContent = sample
+      ? `For an example booking: ${ppl} on ${w.name}, ${sun}. Pick a date and window above to see yours.`
+      : 'For the booking above, on the real dates.';
+    const running = ws.filter(x => x.key !== w.key && fakeBooked(D, x, ws.indexOf(x), ws.length) >= MIN_TO_RUN);
+    const alt = running[0] || ws.find(x => x.key !== w.key);
+    const altSeats = alt ? Math.max(1, SEATS - Math.min(SEATS - 1, fakeBooked(D, alt, ws.indexOf(alt), ws.length))) : 0;
+    const backups = ws.filter(x => bk.has(x.key));
+    const link = 'eastbourneexpress.ca/j/K7Q2';
+    const disc = n => FLAGS.fillDiscount ? ` ${n} more and everyone pays ${price$(perPerson(DISCOUNT_PRICE))}.` : '';
+    const boatTime = fmt(w.point ? w.start : Math.min(w.end, w.start + 90));
+    const have = Math.max(1, Math.min(booked, MIN_TO_RUN - 1));   // thin stories: short of 7
+    const need = MIN_TO_RUN - have;
+    const chartEach = Math.ceil(240 / have);
+
+    const M = [];   // [when, text, why]
+    const held = n => M.push([dd(TODAY, 'just now'),
+      `Eastbourne Express: spot held for ${sun}, ${w.name}, ${ppl}.\n${n}\nInvite a friend: ${link}`,
+      'the deal, restated the moment they book — and the invite link from the very first text']);
+    const friday = name => M.push([dd(day(-2), '9:00 am'),
+      `You're set for Sunday: ${name}, ${ppl}. Exact time comes Saturday at 6 pm. Cancel free until then.`,
+      'before they leave the city — the one everyone gets, so nobody goes up without knowing they have a ride home']);
+    const saturday = (name, t) => M.push([dd(day(-1), '6:00 pm'),
+      `Your boat leaves Eastbourne at ${t} Sunday (${name}). Be on the dock by ${fmt(toMin(t) - 10)}.\nReply HERE when you arrive. The seat's yours now — to hand it to someone, reply SWAP.`,
+      'exact time; check-in and seat transfer are one reply each; this is also the moment free cancellation ends']);
+    const sunday = (t = boatTime) => M.push([dd(D, fmt(toMin(t) - 15)),
+      `Eric's about 15 minutes out. ${Math.max(5, Math.min(SEATS, booked) - 2)} of ${Math.max(MIN_TO_RUN, Math.min(SEATS, booked))} checked in.`,
+      "the dock wait, fixed from the boat's side (GPS) and the skipper's side (who's here)"]);
+
+    if (full) {
+      // The waitlist: first 12 keep their seats; the line is in order; a second boat is Jenny's call.
+      const firstT = toMin(boatTime), lastOK = w.point ? firstT : w.end;
+      const secondT = firstT + 30 <= lastOK ? firstT + 30 : firstT - 30;   // inside the same window
+      const cost = price$(perPerson(PRICE) * party + (sample ? 0 : gearFee().fee));
+      const b = backups[0];
+      M.push([dd(TODAY, 'just now'),
+        `Eastbourne Express: you're ${ordinal(place)} on the waitlist for ${sun}, ${w.name}, ${ppl}. ${withYou} waiting now, you included. At 7 waiting, Jenny can add a second boat.${b ? ` If nothing opens, you're on ${b.name}, your backup.` : ''}\nNothing is charged unless you get a seat. Invite: ${link}`,
+        'the line and the second-boat rule in the very first text; the invite link now helps fill boat two']);
+      M.push([dd(day(-7), '10:00 am'),
+        `${w.name} waitlist for ${sun}: ${withYou} waiting. ${withYou >= MIN_TO_RUN ? "That's enough for a second boat. Jenny decides by Thursday 6 pm." : `${MIN_TO_RUN - withYou} more and there's enough for a second boat.`}\nInvite: ${link}`,
+        'a week out: the waitlist is demand everyone can see, not a black hole']);
+      if (s === 'second') {
+        M.push([dd(day(-4), '11:00 am'),
+          `Jenny's adding a second ${w.name} boat on ${sun}, and you're on it: ${ppl}. ${cost} charged now. Cancel free until Saturday 6 pm.`,
+          "the waitlist turned into a boat, which is the thing Bookeo's waitlist never did"]);
+        const name2 = `${w.name}, second boat`;
+        friday(name2); saturday(name2, fmt(secondT)); sunday(fmt(secondT));
+      } else if (s === 'seat') {
+        M.push([dd(day(-3), '2:40 pm'),
+          `${party === 1 ? 'A seat' : `${party} seats`} opened on ${w.name}: someone cancelled and you were next. You're on the boat, ${ppl}. ${cost} charged now.`,
+          'cancellations promote the waitlist in order, automatically, with no phone call to Jenny']);
+        friday(w.name); saturday(w.name, boatTime); sunday();
+      } else if (b) {
+        M.push([dd(day(-3), '6:00 pm'),
+          `Jenny can't run a second ${w.name} boat this Sunday, and no seat has opened. We've moved you to ${b.name}, your backup. You're still ${ordinal(place)} in line if a seat opens before Saturday 6 pm.`,
+          "no promise broken: the second boat was always Jenny's call, and the backup does the work"]);
+        friday(b.name); saturday(b.name, fmt(b.point ? b.start : b.start + 60)); sunday();
+      } else {
+        M.push([dd(day(-3), '6:00 pm'),
+          `Jenny can't run a second ${w.name} boat this Sunday. You're still ${ordinal(place)} in line until Saturday 6 pm, and nothing is charged unless a seat opens.${alt ? `\n${alt.name} has ${altSeats} seats if you'd rather be sure: ${link}` : ''}`,
+          "no promise broken: the second boat was always Jenny's call, the line still stands, and there's a sure option"]);
+      }
+    } else if (s === 'early') {
+      held(`Your boat's already confirmed — ${Math.max(MIN_TO_RUN, booked)} booked. Exact time by 6 pm Saturday.`);
+      friday(w.name); saturday(w.name, boatTime); sunday();
+    } else {
+      held(`${w.name} has ${have} of 7 so far, you included. It runs at 7. If it hasn't by Thursday 6 pm we'll text you your options.`);
+      M.push([dd(day(-7), '10:00 am'),
+        `${w.name} for ${sun}: ${have} of 7.${disc(FILL_AT - have)}${alt ? ` ${alt.name} is running with ${altSeats} seats left if you'd rather be sure.` : ''}\nInvite: ${link} · Switch: reply SWITCH · Or just wait.`,
+        'a week out, only to people on unfilled windows: numbers, a sure option, and something to do']);
+      M.push([dd(day(-6), '6:00 pm'),
+        `Eric and Jenny's call for Sunday: ${w.name} needs ${need} more by Thursday 6 pm.${disc(FILL_AT - have)}`,
+        "Monday is the operator's move — commit, combine, or warn. This is \"warn\": honest, with four days of runway"]);
+      if (s === 'slow') {
+        M.push([dd(day(-4), '2:15 pm'),
+          `${w.name}: 7 of 7 — your boat's confirmed for Sunday! Exact time Saturday 6 pm.`,
+          'confirmation the moment it happens, whenever that is']);
+        friday(w.name); saturday(w.name, boatTime); sunday();
+      } else {
+        M.push([dd(day(-4), '10:00 am'),
+          `${w.name}: still ${have} of 7. Options:\n• CHARTER — run it anyway at $${chartEach} each, if all ${have} say yes\n• SWITCH — ${alt ? `${alt.name}, ${altSeats} seats left` : 'another boat'}\n• WAIT — until Thursday 6 pm`,
+          'mid-week: the charter is the price ladder, offered only now that the headcount is known — no organizer risk']);
+        if (backups.length) {
+          const b = backups[0];
+          M.push([dd(day(-3), '6:00 pm'),
+            `${w.name} isn't running Sunday. We've moved you to ${b.name}, your backup. No charge until Saturday. Not right? Reply CANCEL — free.`,
+            'resolve-by: the backup they ticked does the work; they still have Friday and Saturday to change their mind']);
+          friday(b.name); saturday(b.name, fmt(b.point ? b.start : b.start + 60)); sunday();
+        } else {
+          M.push([dd(day(-3), '6:00 pm'),
+            `${w.name} isn't running Sunday and you'd asked for that window only. Your spot's released — nothing charged.\n${alt ? `${alt.name} still has ${altSeats} seats: ${link}\n` : ''}Otherwise the Stormaway leaves Eastbourne 4:25 pm (request by text to 604-740-6589 an hour before).`,
+            "released with three days in hand, a real alternative, and even the competitor's time — trust is worth more than the seat"]);
+        }
+      }
+    }
+    box.innerHTML = M.map(([when, text, why]) => `<div class="when">${when}</div><div class="bubble">${text}</div><div class="why">${why}</div>`).join('');
+  }
+
+  // ---- Business model tab. Each idea is a card with its own sliders; the total adds whichever cards
+  //      are switched on. Generalizations, not forecasts: every default is a guess until Eric and Jenny
+  //      move it. The shared running costs (fuel, skipper, wear) feed every card.
+  //      Slider rows: [key, label, default, min, max, step, unit, tbc-note]; ['h', 'Heading'] for a sub-head.
+  const money = n => '$' + Math.round(n).toLocaleString('en-CA');
+  const signed = n => (n < -0.5 ? '−' : '+') + money(Math.abs(n));
+  const cents = n => '$' + n.toFixed(2);
+  function unitFmt(u, v, step) {
+    if (u === '$') return step < 1 ? cents(v) : money(v);
+    if (u === '%') return v + '%';
+    if (u === 'L') return v + ' L';
+    if (u === 'min') return v + ' min';
+    return String(v);
+  }
+
+  const SHARED = [
+    ['diesel',  'Marine diesel, per litre',                        2.10, 1.20, 3.50, 0.05, '$', 'check the dock price'],
+    ['litres',  'Litres per crossing, Eastbourne ↔ Horseshoe Bay',   17,    8,   40,    1, 'L', "estimate: Eric's fuel logs"],
+    ['skipper', 'Skipper pay, per round trip',                       60,    0,  200,    5, '$', 'ask Eric'],
+    ['wear',    'Wear and maintenance, per round trip',              25,    0,  100,    5, '$', 'guess'],
+  ];
+  // An extra round trip: two crossings of fuel, the skipper, and wear.
+  const runCost = S => 2 * S.litres * S.diesel + S.skipper + S.wear;
+  const LITRES_PER_PERSON = 0.35;   // a full load costs ~3–5 L a crossing over empty (Matilda's fuel research) → ~0.35 L a person
+  // What riders pay per Bookeo since May 2026. Whether it includes the fuel surcharge is still open,
+  // but it's what SCWT collects. The model's revenue uses this; the booking page keeps PRICE.
+  const FARE_NOW = 42;
+
+  const SCEN = [
+    { key: 'windows', group: 'earn', big: true, short: 'Sunday windows',
+      title: 'Book into windows on the Sunday Express',
+      src: 'The booking page on the other tab · today’s Sundays from Bookeo, Sep 2025 to Aug 2026 · Bookeo waitlist, Aug 2025 to Aug 2026',
+      why: "Windows let Eric add boats once the demand is visible. The riders come from two places: people turned away today because the boats are full, and people today's times don't suit, who'd leave earlier or later. Either way it's another boat, and every boat has to pay for itself. Extra boats earn their keep on long weekends: the waitlist turns away about 5 people on an ordinary summer Sunday, and more than a boatload on a long weekend.",
+      // Levers per season, as a grid of steppers: [rowKey, label, {sum, mid, slow}, min, max].
+      // Today's Sundays (Bookeo, Sep 2025 to Aug 2026, riders per boat day): summer 25.0 → 2 × 12;
+      // medium (Apr, May, Oct, Nov) 16.6 → 2 × 8; slow (Dec–Mar) 13.4 → 1 × 12. Add boats (2026-10-01, Bookeo waitlist): ~5 lost riders a summer
+      // Sunday, spiking on long weekends; almost none in the medium and slow months.
+      grid: {
+        cols: [['sum', 'Summer', 'Jun–Sep'], ['mid', 'Medium', '4 months'], ['slow', 'Slow', '4 months']],
+        rows: [
+          ['h', 'Today'],
+          ['Days',     'Boat days (Sundays + holiday Mondays)', { sum: 18, mid: 18, slow: 17 }, 0, 30],
+          ['Boats',    'Boats a Sunday',                        { sum: 2,  mid: 2,  slow: 1 },  1, 4],
+          ['Fill',     'People per boat',                       { sum: 12, mid: 8,  slow: 12 }, 1, 12],
+          ['h', 'Add boats'],
+          ['Extra',    'Extra boats a Sunday',                  { sum: 1,  mid: 0,  slow: 0 },  0, 5],
+          ['ExtraPpl', 'People on each extra boat',             { sum: 7,  mid: 7,  slow: 7 },  1, 12],
+        ],
+      },
+      sliders: [
+        ['h', 'Also'],
+        ['resold', 'Cancelled or handed-on seats resold, per boat', 1, 0, 3, 0.5],
+      ],
+      calc(v, S) {
+        // The fill discount is parked (2026-09-30), so it isn't modelled here.
+        const F = FARE_NOW, rc = runCost(S);
+        const SEASONS = [['sum', 'Summer (Jun–Sep)'], ['mid', 'Medium months'], ['slow', 'Slow months']];
+        const R = {};
+        SEASONS.forEach(([k]) => {
+          const days = v[k + 'Days'], boats = v[k + 'Boats'], xb = v[k + 'Extra'], xp = Math.min(v[k + 'ExtraPpl'], SEATS);
+          R[k] = {
+            xb,
+            today: days * boats * v[k + 'Fill'] * F,
+            more: days * xb * xp * F,
+            resold: days * (boats + xb) * v.resold * F,
+            runs: days * xb,
+            sundayBoats: days * (boats + xb),
+            ridersToday: days * boats * v[k + 'Fill'],
+            ridersMore: days * xb * xp,
+          };
+        });
+        const sum = f => SEASONS.reduce((t, [k]) => t + R[k][f], 0);
+        const per = f => SEASONS.map(([k]) => R[k][f]).join(' / ');
+        const lines = [
+          [`Extra boats (${per('xb')} a Sunday: summer / medium / slow)`, sum('more'), 'rev'],
+          ['Cancelled and handed-on seats resold instead of sailing empty', sum('resold'), 'rev'],
+          [`Running the ${sum('runs')} extra boats`, sum('runs') * rc, 'cost'],
+        ];
+        const breakEven = Math.ceil(rc / F);
+        const notes = [`At these running costs a boat pays for itself at about ${breakEven} people; it only runs at ${MIN_TO_RUN}.`];
+        SEASONS.forEach(([k, lab]) => { if (R[k].xb && v[k + 'ExtraPpl'] < MIN_TO_RUN) notes.push(`Extra boats in the ${lab.toLowerCase()} have ${v[k + 'ExtraPpl']} people, under the ${MIN_TO_RUN} a boat needs to run${v[k + 'ExtraPpl'] < breakEven ? ', and they lose money' : ''}.`); });
+        // Today, plus what the extra boats add, by season (before running costs).
+        const max = Math.max(1, ...SEASONS.map(([k]) => R[k].today + R[k].more)) * 1.02;
+        const row = (lab, r) => `<div class="row"><span class="lab">${lab}</span><span class="track">
+          <span class="seg today" style="width:${r.today / max * 100}%" data-tip="Today: ${money(r.today)}"><span class="dl">${money(r.today)}</span></span>
+          ${r.more > 0 ? `<span class="seg gain end" style="width:${r.more / max * 100}%" data-tip="Extra boats: ${money(r.more)} a year, before running costs"><span class="dl">+${money(r.more)}</span></span>` : ''}
+        </span></div>`;
+        const extraHTML = `<div class="legend2"><span><i style="background:var(--chart-today)"></i>Today</span><span><i style="background:var(--chart-gain)"></i>Extra boats, before running costs</span></div>
+          <div class="chart">${SEASONS.map(([k, lab]) => row(lab, R[k])).join('')}</div>`;
+        return { lines, extra: extraHTML, note: notes.join(' '), today: sum('today'), sundayBoats: sum('sundayBoats'),
+          ridersToday: sum('ridersToday'), ridersMore: sum('ridersMore') };
+      } },
+
+    { key: 'friday', group: 'earn', short: 'Late Friday boat',
+      title: 'A late Friday boat to Keats in summer',
+      src: 'Eric, via Tim · Sept 2026',
+      why: "People have asked for it, especially in summer, and Mercury doesn't run one. It leaves Horseshoe Bay after work. It's also the heavy direction: Friday boats carry the weekend's groceries and supplies.",
+      sliders: [
+        ['fridays', 'Summer Fridays it runs', 12, 4, 20, 1],
+        ['ppl',     'People per Friday boat', 9, 1, 12, 1, '', 'ask Eric'],
+        ['fare',    'Fare',                   42, 25, 50, 1, '$'],
+        ['back',    'Seats sold on the way back', 1, 0, 8, 1],
+      ],
+      calc(v, S) {
+        const cost = v.fridays * (runCost(S) + S.litres * S.diesel);   // three crossings: out to HSB, over to Eastbourne, home
+        return { lines: [
+          [`${v.fridays} Friday boats × ${v.ppl} people`, v.fridays * v.ppl * v.fare, 'rev'],
+          ['Seats sold on the way back', v.fridays * v.back * v.fare, 'rev'],
+          ['Running them (three crossings each: out, over, home)', cost, 'cost'],
+        ], note: (() => {
+          // Fewest people out that still covers a Friday's cost, counting the seats sold on the way back.
+          const perFriday = runCost(S) + S.litres * S.diesel, need = Math.max(0, Math.ceil(perFriday / v.fare - v.back));
+          return v.ppl < need ? `Under ${need} people this boat costs more than it brings in at these running costs.`
+                              : `A Friday costs about ${money(perFriday)} to run, so it pays for itself from ${need} people out.`;
+        })() };
+      } },
+
+    { key: 'home', group: 'earn', short: 'Seats on runs back',
+      title: 'Sell seats on the empty runs back to the island',
+      src: 'Eric and Tim · Sept 2026',
+      why: "After the drop at Horseshoe Bay the boat runs back toward the island empty. Post those runs (\"boat heading back to Keats about 3 pm, 4 seats\") at the regular fare, and nearly every dollar is margin, because the boat is going anyway. Not many people head up on a Sunday, so the Sunday share is small.",
+      sliders: [
+        ['h', 'Sundays'],
+        ['sunSeats', 'Seats sold on each Sunday run back', 1, 0, 6, 1, '', 'few go up on Sundays'],
+        ['h', 'Other days'],
+        ['runs',   'Empty runs back after a drop-off, a week', 4, 0, 20, 1, '', 'ask Eric'],
+        ['weeks',  'Weeks a year it applies',                 40, 10, 52, 1],
+        ['posted', 'Runs known far enough ahead to post',     50, 0, 100, 5, '%'],
+        ['seats',  'Seats sold on each posted run',           2, 0, 8, 1],
+      ],
+      calc(v, S) {
+        const fare = FARE_NOW;   // same fare as the Express, not discounted (Eric, 2026-09-30)
+        const sundayLegs = SCEN.find(x => x.key === 'windows').calc(M.windows, S).sundayBoats;
+        const sun = sundayLegs * v.sunSeats, other = v.runs * v.weeks * v.posted / 100 * v.seats;
+        return { lines: [
+          [`Sundays: ${Math.round(sun)} seats on ${sundayLegs} runs back a year, at $${fare}`, sun * fare, 'rev'],
+          [`Other days: ${Math.round(other)} seats on posted runs back, at $${fare}`, other * fare, 'rev'],
+          ['Extra fuel for the added weight', (sun + other) * LITRES_PER_PERSON * S.diesel, 'cost'],
+        ], note: 'Heading to the island is the heavy direction (groceries, supplies), so the weight allowance and over-weight fee apply on these runs.' };
+      } },
+
+    { key: 'charters', group: 'earn', short: 'Charters online',
+      title: 'Charters you can price and book online',
+      src: 'Tim · Sept 2026',
+      why: 'Charters are booked by phone today. A price on screen for the group, and a booking that takes two minutes, catch the people who give up on phone tag. Every one booked online is also time back for Jenny.',
+      sliders: [
+        ['perYear',  'Charters a year today',              120, 20, 400, 10, '', 'ask Jenny'],
+        ['lift',     'More charters when booking is easy', 15, 0, 50, 5, '%'],
+        ['avg',      'Average charter',                    300, 150, 800, 10, '$', 'rate card'],
+        ['h', "Jenny's time"],
+        ['online',   'Charters booked online',             60, 0, 100, 5, '%'],
+        ['phoneMin', 'Phone time per charter today',       20, 0, 60, 5, 'min', 'ask Jenny'],
+        ['rate',     "Jenny's time, an hour",              35, 0, 80, 5, '$'],
+      ],
+      calc(v, S) {
+        const extra = v.perYear * v.lift / 100, hours = v.perYear * (1 + v.lift / 100) * v.online / 100 * v.phoneMin / 60;
+        return { lines: [
+          [`${Math.round(extra)} more charters a year`, extra * v.avg, 'rev'],
+          ['Running them', extra * runCost(S), 'cost'],
+          [`Jenny's phone time back (${Math.round(hours)} hours)`, hours * v.rate, 'saved'],
+        ] };
+      } },
+
+    { key: 'heavy', group: 'earn', short: 'Heavy items fee',
+      title: 'Heavy items pay their way and get planned',
+      src: 'Eric, via Tim · Sept 2026',
+      why: 'Full boats with people and supplies still go, but the weight wears the boat. Declare a heavy item at booking and pay a small fee (Mercury charges $5, $10 or $25 by size). Eric sees the load coming and can spread it over two runs.',
+      sliders: [
+        ['trips',   'Trips to the island a year, all runs',  1500, 200, 5000, 100, '', 'ask Eric'],
+        ['share',   'Trips with something heavy',            8, 0, 30, 1, '%'],
+        ['fee',     'Fee per heavy item',                    20, 5, 60, 5, '$'],
+        ['h', 'Wear'],
+        ['over',    'Overweight runs a year today',          30, 0, 150, 5, '', 'ask Eric'],
+        ['wearPer', 'Extra wear per overweight run',         150, 0, 500, 10, '$', 'guess'],
+        ['avoided', 'Overweight runs avoided when loads are known ahead', 50, 0, 100, 5, '%'],
+      ],
+      calc(v, S) {
+        return { lines: [
+          [`${Math.round(v.trips * v.share / 100)} heavy items a year`, v.trips * v.share / 100 * v.fee, 'rev'],
+          ['Wear avoided by splitting heavy loads', v.over * v.wearPer * v.avoided / 100, 'saved'],
+        ], note: "Eric hasn't said how much of the year's repairs were load-related. The wear numbers are placeholders." };
+      } },
+
+    { key: 'docks', group: 'earn', short: 'Private-dock pickups',
+      title: 'Private-dock pickups on thin Sundays',
+      src: 'Tim · Sept 2026',
+      why: "On a thin Sunday, pick a few people up at private docks on the way to Eastbourne, then run direct as usual. A fuller boat, and it's still the Express once it leaves Eastbourne.",
+      sliders: [
+        ['thin',   'Thin Sundays a year',        15, 0, 40, 1],
+        ['stops',  'Dock stops on the way',      1, 0, 3, 1],
+        ['ppl',    'People per stop',            2, 1, 6, 1],
+        ['fare',   'Fare',                       42, 25, 50, 1, '$'],
+        ['extraL', 'Extra fuel per stop',        3, 1, 8, 1, 'L'],
+      ],
+      calc(v, S) {
+        const n = v.thin * v.stops;
+        return { lines: [
+          [`${n * v.ppl} riders a year picked up at private docks`, n * v.ppl * v.fare, 'rev'],
+          ['Extra fuel for the stops', n * v.extraL * S.diesel, 'cost'],
+        ] };
+      } },
+
+    { key: 'books', group: 'earn', short: 'Ticket books',
+      title: 'Ticket books sold before the season',
+      src: 'Tim · Sept 2026',
+      why: 'A discounted book of Express tickets, bought in spring, that expires at season end. It brings cash in early and gives a count of riders you know are coming. On its own it earns little, and it can cost a little.',
+      sliders: [
+        ['books',   'Books sold',                 40, 0, 200, 5],
+        ['tickets', 'Tickets per book',           10, 5, 20, 1],
+        ['disc',    'Discount on a book',         10, 0, 25, 1, '%'],
+        ['unused',  'Tickets unused at expiry',   8, 0, 25, 1, '%'],
+        ['newRides','Extra rides per book (people ride more once prepaid)', 1, 0, 5, 1],
+      ],
+      calc(v, S) {
+        const cash = v.books * v.tickets * FARE_NOW * (1 - v.disc / 100);
+        return { lines: [
+          ['Unused tickets, kept', v.books * v.tickets * v.unused / 100 * FARE_NOW, 'rev'],
+          ['Rides that happen because of the book', v.books * v.newRides * FARE_NOW, 'rev'],
+          ['The discount', -v.books * v.tickets * v.disc / 100 * FARE_NOW, 'rev'],
+          ['Cash in hand before the season (not extra)', null, 'info', money(cash)],
+        ] };
+      } },
+
+    { key: 'fuel', group: 'save', short: 'Fuel charge that tracks',
+      title: 'A fuel charge that tracks the price of diesel',
+      src: 'Eric, via Tim · Sept 2026 (idea: Tim)',
+      why: "Every company adds close to $10 for fuel now, a number set once and left alone. Instead, quote the ride without fuel and add fuel at this week's price. The charge follows the market both ways: less when diesel drops, and a spike doesn't eat the margin.",
+      sliders: [
+        ['flat',  'Flat fuel surcharge, a person', 8, 0, 20, 1, '$', 'ask Eric'],
+        ['pax',   'Paying passengers a year, all runs',  2000, 200, 6000, 100, '', 'ask Jenny'],
+        ['ppl',   'Average passengers on a paid crossing', 8, 3, 12, 1],
+        ['empty', 'Empty crossings for each paid one',   1, 0, 2, 0.5, '', 'ask Eric'],
+      ],
+      calc(v, S) {
+        const at = p => trackedFuel({ ...S, diesel: p }, v), now = at(S.diesel);
+        const diff = (now - v.flat) * v.pax;
+        const prices = [1.6, 2.1, 2.6, 3.1];
+        const extraHTML = `<div class="fuelgrid">${prices.map(p => `<div class="${Math.abs(p - S.diesel) < 0.03 ? 'now' : ''}">at $${p.toFixed(2)}/L<b>${cents(at(p))}</b></div>`).join('')}</div>`;
+        return { lines: [
+          [`Fuel charge a person at $${S.diesel.toFixed(2)}/L`, null, 'info', cents(now)],
+          [`vs a flat $${v.flat}, over ${v.pax.toLocaleString('en-CA')} passengers`, diff, 'rev'],
+        ], extra: extraHTML,
+        note: diff < 0
+          ? `At these numbers a tracked charge brings in less than the flat $${v.flat}. What it buys is trust (passengers see the fuel price, not a guess) and cover when diesel spikes.`
+          : `At these numbers the flat $${v.flat} isn't covering fuel. Tracking the price closes the gap.` };
+      } },
+
+    { key: 'cruise', group: 'save', short: 'Cruise empty legs slower',
+      title: 'Run the empty legs at the fuel sweet spot',
+      src: "Matilda's fuel research · Sept 2026",
+      why: 'About 23 knots instead of about 35 saves 2–4 litres a crossing, for about five extra minutes. Nobody is aboard an empty leg to mind the five minutes. The Express stays fast when it has passengers.',
+      sliders: [
+        ['crossings', 'Empty crossings a year', 300, 0, 1000, 10, '', 'ask Eric'],
+        ['saveL',     'Litres saved per crossing', 3, 0, 6, 0.5, 'L'],
+      ],
+      calc(v, S) {
+        return { lines: [[`${Math.round(v.crossings * v.saveL).toLocaleString('en-CA')} litres a year not burned`, v.crossings * v.saveL * S.diesel, 'saved']] };
+      } },
+  ];
+
+  // ---- Model state: slider values and on/off, remembered in this browser.
+  const DEF = { shared: {}, on: {} };
+  SHARED.forEach(a => DEF.shared[a[0]] = a[2]);
+  SCEN.forEach(s => {
+    DEF[s.key] = {};
+    if (s.grid) s.grid.rows.forEach(r => { if (r[0] !== 'h') s.grid.cols.forEach(([c]) => DEF[s.key][c + r[0]] = r[2][c]); });
+    s.sliders.forEach(a => { if (a[0] !== 'h') DEF[s.key][a[0]] = a[2]; });
+    DEF.on[s.key] = true;
+  });
+  let M = JSON.parse(JSON.stringify(DEF));
+  try {
+    let saved = JSON.parse(localStorage.getItem('model.v2') || 'null');
+    if (!saved) {   // v1 → v2 (2026-09-30): windows became three seasons and runs-home became runs back; drop those two
+      saved = JSON.parse(localStorage.getItem('model.v1') || 'null');
+      if (saved) { delete saved.windows; delete saved.home; }
+    }
+    if (saved) Object.keys(M).forEach(k => Object.keys(M[k]).forEach(f => { if (saved[k] && saved[k][f] !== undefined) M[k][f] = saved[k][f]; }));
+    if (saved && saved.fuel && saved.fuel.flat === 10) M.fuel.flat = DEF.fuel.flat;   // old default ($10) → $8 (2026-09-30)
+    // Old add-boats defaults (summer 2 × 8, medium 1) → the Bookeo waitlist ones (2026-10-01)
+    const w = saved && saved.windows;
+    if (w && w.sumExtra === 2 && w.sumExtraPpl === 8 && w.midExtra === 1) ['sumExtra', 'sumExtraPpl', 'midExtra'].forEach(k => M.windows[k] = DEF.windows[k]);
+    // Old Today/fare defaults → Bookeo ones (2026-10-01): medium 10 a boat → 8; Friday and dock fare $35 → $42
+    if (w && w.midFill === 10) M.windows.midFill = DEF.windows.midFill;
+    ['friday', 'docks'].forEach(g => { if (saved && saved[g] && saved[g].fare === 35) M[g].fare = DEF[g].fare; });
+  } catch (e) {}
+  const saveModel = () => { try { localStorage.setItem('model.v2', JSON.stringify(M)); } catch (e) {} };
+
+  const sliderHTML = (group, a) => a[0] === 'h' ? `<h3>${a[1]}</h3>` :
+    `<label><span>${a[1]}${a[7] ? ` <span class="tbc">${a[7]}</span>` : ''}</span><output id="o-${group}-${a[0]}">${unitFmt(a[6], M[group][a[0]], a[5])}</output>` +
+    `<input type="range" data-g="${group}" data-k="${a[0]}" data-u="${a[6] || ''}" min="${a[3]}" max="${a[4]}" step="${a[5]}" value="${M[group][a[0]]}"></label>`;
+
+  // A season grid: one stepper per season for each lever.
+  const gridHTML = s => `<div class="sgrid" style="--n:${s.grid.cols.length}"><span class="corner"></span>` +
+    s.grid.cols.map(([, name, sub]) => `<span class="sh">${name}<small>${sub}</small></span>`).join('') +
+    s.grid.rows.map(r => r[0] === 'h' ? `<span class="sgh">${r[1]}</span>` :
+      `<span class="sl">${r[1]}</span>` + s.grid.cols.map(([c, name]) => {
+        const k = c + r[0], val = M[s.key][k];
+        return `<span class="st"><button type="button" data-g="${s.key}" data-k="${k}" data-d="-1" data-min="${r[3]}" data-max="${r[4]}" aria-label="${r[1]}, ${name}: less" ${val <= r[3] ? 'disabled' : ''}>−</button><output id="o-${s.key}-${k}">${val}</output><button type="button" data-g="${s.key}" data-k="${k}" data-d="1" data-min="${r[3]}" data-max="${r[4]}" aria-label="${r[1]}, ${name}: more" ${val >= r[4] ? 'disabled' : ''}>+</button></span>`;
+      }).join('')).join('') + '</div>';
+
+  function buildModel() {
+    document.getElementById('shared').innerHTML = SHARED.map(a => sliderHTML('shared', a)).join('');
+    ['earn', 'save'].forEach(g => {
+      document.getElementById('cards-' + g).innerHTML = SCEN.filter(s => s.group === g).map(s => `
+        <article class="card ${s.big ? 'big' : ''} ${M.on[s.key] ? '' : 'off'}" id="sc-${s.key}">
+          <div class="card-head">
+            <input type="checkbox" class="switch" data-on="${s.key}" ${M.on[s.key] ? 'checked' : ''} aria-label="Include ${s.short} in the total">
+            <div><h3>${s.title}</h3><p class="src">${s.src}</p></div>
+            <div class="net"><b></b><small>net a year</small></div>
+          </div>
+          <p class="why">${s.why}</p>
+          <div class="card-body">
+            <div><div class="extra"></div><ul class="lines"></ul><p class="note"></p></div>
+            <details class="q" ${s.big || window.innerWidth >= 900 ? 'open' : ''}><summary>Assumptions</summary><div class="a">${s.grid ? gridHTML(s) : ''}<div class="assume">${s.sliders.map(a => sliderHTML(s.key, a)).join('')}</div></div></details>
+          </div>
+        </article>`).join('');
+    });
+    document.querySelectorAll('#tab-model input[type=range]').forEach(i => i.oninput = () => {
+      const a = (i.dataset.g === 'shared' ? SHARED : SCEN.find(s => s.key === i.dataset.g).sliders).find(x => x[0] === i.dataset.k);
+      M[i.dataset.g][i.dataset.k] = +i.value;
+      document.getElementById(`o-${i.dataset.g}-${i.dataset.k}`).textContent = unitFmt(i.dataset.u, +i.value, a[5]);
+      saveModel(); renderModel();
+    });
+    document.querySelectorAll('#tab-model .sgrid button').forEach(b => b.onclick = () => {
+      const g = b.dataset.g, k = b.dataset.k, min = +b.dataset.min, max = +b.dataset.max;
+      M[g][k] = Math.max(min, Math.min(max, M[g][k] + +b.dataset.d));
+      const cell = b.parentElement;
+      cell.querySelector('output').textContent = M[g][k];
+      cell.querySelector('[data-d="-1"]').disabled = M[g][k] <= min;
+      cell.querySelector('[data-d="1"]').disabled = M[g][k] >= max;
+      saveModel(); renderModel();
+    });
+    document.querySelectorAll('#tab-model .switch').forEach(c => c.onchange = () => {
+      M.on[c.dataset.on] = c.checked;
+      document.getElementById('sc-' + c.dataset.on).classList.toggle('off', !c.checked);
+      saveModel(); renderModel();
+    });
+  }
+  document.getElementById('model-reset').onclick = () => {
+    // Only the shared running costs in this box; cards' sliders and on/off switches stay as they are.
+    M.shared = { ...DEF.shared }; saveModel(); buildModel(); renderModel();
+  };
+
+  function wireTips(root) {
+    const tip = document.getElementById('tip');
+    root.querySelectorAll('[data-tip]').forEach(el => {
+      el.onmousemove = e => { tip.textContent = el.dataset.tip; tip.style.display = 'block'; tip.style.left = Math.min(e.clientX + 12, innerWidth - tip.offsetWidth - 8) + 'px'; tip.style.top = (e.clientY + 12) + 'px'; };
+      el.onmouseleave = () => tip.style.display = 'none';
+    });
+  }
+
+  function renderModel() {
+    const S = M.shared;
+    renderPrice();
+    document.getElementById('runcost').innerHTML =
+      `An extra round trip costs about <b>${money(runCost(S))}</b>: ${Math.round(2 * S.litres)} L of fuel (${money(2 * S.litres * S.diesel)}), the skipper (${money(S.skipper)}) and wear (${money(S.wear)}).`;
+    let today = 0, riders = 0;
+    const R = SCEN.map(s => {
+      const r = s.calc(M[s.key], S);
+      const sum = kind => r.lines.filter(l => l[2] === kind && l[1] !== null).reduce((t, l) => t + l[1], 0);
+      r.rev = sum('rev'); r.cost = sum('cost'); r.saved = sum('saved'); r.net = r.rev - r.cost + r.saved;
+      if (r.today) today = r.today;
+      if (r.ridersToday !== undefined) riders = r.ridersToday + (M.on[s.key] ? r.ridersMore : 0);
+      const card = document.getElementById('sc-' + s.key);
+      const nb = card.querySelector('.net b');
+      nb.textContent = signed(r.net); nb.style.color = r.net < -0.5 ? 'var(--chart-gain)' : 'var(--chart-today)';
+      card.querySelector('.lines').innerHTML = r.lines.map(([l, v, kind, shown]) => kind === 'info'
+        ? `<li class="info"><span>${l}</span><b>${shown}</b></li>`
+        : `<li><span>${l}</span><b>${kind === 'cost' ? '−' + money(v) : signed(v)}</b></li>`).join('');
+      card.querySelector('.extra').innerHTML = r.extra || '';
+      card.querySelector('.note').textContent = r.note || '';
+      wireTips(card);
+      return { s, r };
+    });
+    const on = R.filter(x => M.on[x.s.key]);
+    const tot = k => on.reduce((t, x) => t + x.r[k], 0);
+    document.getElementById('k-today').textContent = money(today);
+    document.getElementById('k-rev').textContent = signed(tot('rev'));
+    document.getElementById('k-cost').textContent = '−' + money(tot('cost'));
+    document.getElementById('k-saved').textContent = signed(tot('saved'));
+    const kn = document.getElementById('k-net'); kn.textContent = signed(tot('net'));
+    kn.classList.toggle('pos', tot('net') >= 0); kn.style.color = tot('net') < 0 ? 'var(--chart-gain)' : '';
+    // Tim's booking fee: on top of the fare, so it's in none of the numbers above.
+    document.getElementById('k-fee').innerHTML =
+      `<b>Booking fee:</b> paid by riders on top of the fare, and it goes to Tim for the booking system and the texts. It isn't Eric and Jenny's revenue or cost, so it's left out of every number on this page. $${FLAGS.fee} a rider × about ${riders.toLocaleString('en-CA')} Sunday riders a year (today's plus the extra boats) ≈ ${money(FLAGS.fee * riders)}.`;
+
+    // Diverging bars around zero: switched-on ideas by net, then the switched-off ones, muted.
+    const rows = [...on.sort((a, b) => b.r.net - a.r.net), ...R.filter(x => !M.on[x.s.key])];
+    const pos = Math.max(0, ...R.map(x => x.r.net)), neg = Math.max(0, ...R.map(x => -x.r.net));
+    const span = (pos + neg) || 1, zero = neg / span * 100;
+    document.getElementById('mchart').innerHTML = rows.map(({ s, r }) => {
+      const w = Math.abs(r.net) / span * 100;
+      const tip = `${s.short}: ${signed(r.net)} a year · revenue ${signed(r.rev)}, running −${money(r.cost)}, saved ${signed(r.saved)}${M.on[s.key] ? '' : ' (switched off)'}`;
+      return `<div class="mrow ${M.on[s.key] ? '' : 'off'}" data-go="${s.key}" data-tip="${tip}">
+        <span class="lab">${s.short}</span>
+        <span class="trk"><span class="zero" style="left:${zero}%"></span>
+          <span class="bar ${r.net < 0 ? 'neg' : 'pos'}" style="${r.net < 0 ? `left:${zero - w}%` : `left:${zero}%`};width:${w}%"></span></span>
+        <span class="val">${signed(r.net)}</span></div>`;
+    }).join('');
+    document.querySelectorAll('#mchart .mrow').forEach(el => el.onclick = () => {
+      document.getElementById('tip').style.display = 'none';
+      document.getElementById('sc-' + el.dataset.go).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    wireTips(document.getElementById('mchart'));
+    document.getElementById('mtable').innerHTML = '<tr><th>Idea</th><th>Revenue</th><th>Running cost</th><th>Saved</th><th>Net a year</th></tr>' +
+      rows.map(({ s, r }) => `<tr><td>${s.short}${M.on[s.key] ? '' : ' (off)'}</td><td>${signed(r.rev)}</td><td>−${money(r.cost)}</td><td>${signed(r.saved)}</td><td><b>${signed(r.net)}</b></td></tr>`).join('') +
+      `<tr><td><b>Total, switched on</b></td><td>${signed(tot('rev'))}</td><td>−${money(tot('cost'))}</td><td>${signed(tot('saved'))}</td><td><b>${signed(tot('net'))}</b></td></tr>`;
+  }
+  buildModel();
+
+  // ---- Tabs: the booking page and the model. Remembered, and #model links straight to the model.
+  const TAB_BTNS = document.querySelectorAll('.tabs [role=tab]');
+  function showTab(t) {
+    TAB_BTNS.forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
+    document.getElementById('tab-booking').hidden = t !== 'booking';
+    document.getElementById('tab-model').hidden = t !== 'model';
+    document.body.classList.toggle('tab-model', t === 'model');
+    try { localStorage.setItem('ui.tab', t); history.replaceState(null, '', t === 'model' ? '#model' : location.pathname + location.search); } catch (e) {}
+  }
+  TAB_BTNS.forEach(b => b.onclick = () => { showTab(b.dataset.tab); scrollTo(0, 0); });
+  let firstTab = 'booking';
+  try { firstTab = location.hash === '#model' ? 'model' : location.hash === '#booking' ? 'booking' : (localStorage.getItem('ui.tab') || 'booking'); } catch (e) {}
+  showTab(firstTab);
+
+
+  // ---- Steps 4–5 and the confirmation. The deal is four plain sentences (user-flow.md): runs at 7 ·
+  //      options by Thursday 6 pm · exact time and free cancel until Saturday 6 pm · then the seat is
+  //      yours to hand on. Card on file; charged when the boat is confirmed, never before.
+  // For the demo, steps 4–5 stay greyed out and can't be used (Tim, 2026-09-30); the deal and price
+  // still render underneath. true turns them on.
+  const LIVE_STEPS = false;
+  if (!LIVE_STEPS) ['step-contact', 'step-pay'].forEach(id => document.getElementById(id).inert = true);
+  const F = { name: document.getElementById('f-name'), mobile: document.getElementById('f-mobile'),
+              email: document.getElementById('f-email'), optin: document.getElementById('f-optin') };
+  const digits = () => F.mobile.value.replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '');
+  const mobileOK = () => digits().length === 10;
+  const contactOK = () => F.name.value.trim().length > 1 && mobileOK();
+  const prettyMobile = d => `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6)}`;
+  F.mobile.onblur = () => {
+    const bad = F.mobile.value.trim() && !mobileOK();
+    if (mobileOK()) F.mobile.value = prettyMobile(digits());
+    F.mobile.setAttribute('aria-invalid', bad ? 'true' : 'false');
+    document.getElementById('mobile-err').textContent = bad ? 'A 10-digit mobile number, like 604 555 0123.' : '';
+  };
+  F.mobile.oninput = () => { if (mobileOK()) { F.mobile.setAttribute('aria-invalid', 'false'); document.getElementById('mobile-err').textContent = ''; } renderPay(); };
+  F.name.oninput = renderPay;
+
+  // Where this booking lands on the fake demand: held, tips the boat to 7, already running, or waitlist.
+  function bookingStatus() {
+    const ws = windowsFor(state.date), w = ws.find(x => x.key === state.window), idx = ws.indexOf(w);
+    const booked = fakeBooked(state.date, w, idx, ws.length), left = SEATS - Math.min(booked, SEATS);
+    const backups = ws.filter(x => state.backups.has(x.key));
+    if (left < state.party) return { kind: 'wait', w, booked, backups, place: Math.max(0, booked - SEATS) + 1 };
+    if (booked >= MIN_TO_RUN) return { kind: 'running', w, booked, backups };
+    if (booked + state.party >= MIN_TO_RUN) return { kind: 'tipped', w, booked, backups };
+    return { kind: 'held', w, booked, backups, need: MIN_TO_RUN - booked - state.party };
+  }
+  const timeOfW = w => w.point ? `about ${fmt(w.start)}` : `${fmt(w.start)} – ${fmt(w.end)}`;
+  const dayBefore = n => { const d = state.date; return new Date(d.getFullYear(), d.getMonth(), d.getDate() - n); };
+  const shortDay = d => d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+  function totals() {
+    const each = perPerson(PRICE), g = gearFee();
+    return { each, weight: g.fee, total: each * state.party + g.fee, fuel: fuelCharge() };
+  }
+  const bookingSig = () => JSON.stringify([state.date && iso(state.date), state.window, [...state.backups].sort(), state.party, state.dogs, state.gear, FLAGS.fuel, F.name.value, digits()]);
+  let bookedSig = null;
+
+  function renderPay() {
+    const sec = document.getElementById('step-pay'), btn = document.getElementById('hold'), why = document.getElementById('hold-why');
+    if (!state.date || !state.window) { sec.classList.add('pending'); btn.disabled = true; return; }
+    if (bookedSig && bookedSig !== bookingSig()) { document.getElementById('step-done').hidden = true; bookedSig = null; }
+    if (LIVE_STEPS) sec.classList.remove('pending');
+    const st = bookingStatus(), t = totals(), w = st.w, sat = shortDay(dayBefore(1)), thu = shortDay(dayBefore(3));
+    const backupNames = st.backups.map(b => b.name).join(' or ');
+    const first = {
+      held: `${w.name} runs once 7 people book it. With you it's ${st.booked + state.party} of 7, so ${st.need} more to go.`,
+      tipped: `Your booking makes 7: ${w.name} is running.`,
+      running: `${w.name} is already running, with ${st.booked} booked.`,
+      wait: `${w.name} is full${SEATS - Math.min(st.booked, SEATS) > 0 ? ` for a group of ${state.party}` : ''}. You'd be ${ordinal(st.place)} on the waitlist: next up if a seat opens, and on the second boat if Jenny adds one.`,
+    }[st.kind];
+    const second = st.kind === 'held'
+      ? (backupNames ? `If it hasn't reached 7 by Thursday 6 pm (${thu}), we'll move you to ${backupNames}, your backup.`
+                     : `If it hasn't reached 7 by Thursday 6 pm (${thu}), we'll text you your options: a running boat, keep waiting, or let it go. No charge.`)
+      : st.kind === 'wait'
+      ? (backupNames ? `If no seat opens by Thursday 6 pm (${thu}), we'll move you to ${backupNames}, your backup.`
+                     : `If no seat opens, nothing is charged, and we'll text you either way.`)
+      : null;
+    const deal = [first, second,
+      `Your exact boat time comes by text on Saturday at 6 pm (${sat}). Cancel free until then.`,
+      `After that the seat is yours: no refund, but you can hand it to someone else by text.`].filter(Boolean);
+    document.getElementById('deal').innerHTML = deal.map(d => `<li>${d}</li>`).join('');
+
+    document.getElementById('pay-sum').innerHTML =
+      `<tr><td>${state.party} × ${price$(t.each)}<small>fare, fuel${FLAGS.fuel === 'tracked' ? ` (locked at ${price$(t.fuel)})` : ''}, booking fee</small></td><td>${price$(t.each * state.party)}</td></tr>` +
+      (t.weight ? `<tr><td>Extra weight<small>about ${state.gear} lb, ${gearFee().over} lb over</small></td><td>${price$(t.weight)}</td></tr>` : '') +
+      `<tr class="total"><td>Total</td><td>${price$(t.total)}</td></tr>`;
+    document.getElementById('charge-note').textContent = {
+      held: `Nothing is charged now. We charge ${price$(t.total)} when your boat is confirmed.`,
+      tipped: `Your boat is running, so ${price$(t.total)} is charged when you book. Cancel free until Saturday 6 pm.`,
+      running: `Your boat is running, so ${price$(t.total)} is charged when you book. Cancel free until Saturday 6 pm.`,
+      wait: `Nothing is charged unless you get a seat.`,
+    }[st.kind];
+    const one = state.party === 1;
+    btn.textContent = { held: one ? 'Hold my spot' : 'Hold our spots', tipped: one ? 'Book my seat' : 'Book our seats',
+                        running: one ? 'Book my seat' : 'Book our seats', wait: 'Join the waitlist' }[st.kind];
+    btn.disabled = !contactOK();
+    why.textContent = contactOK() ? 'Demo: nothing is charged and no text is sent.' : 'Add a name and mobile at step 4 first.';
+  }
+
+  document.getElementById('hold').onclick = () => {
+    const st = bookingStatus(), t = totals(), w = st.w, D = state.date, sat = shortDay(dayBefore(1));
+    const ref = 'EX-' + (iso(D).replace(/-/g, '').slice(2) + state.window.slice(0, 2)).toUpperCase() + digits().slice(-2);
+    const ppl = `${state.party} ${state.party === 1 ? 'person' : 'people'}${state.dogs ? ` + ${state.dogs} dog${state.dogs === 1 ? '' : 's'}` : ''}`;
+    const statusTxt = { held: `Held. ${st.need} more to run.`, tipped: 'Confirmed. Your booking made 7.', running: 'Confirmed. The boat is running.', wait: `Waitlist, ${ordinal(st.place)} in line.` }[st.kind];
+    const charged = { held: `Nothing yet. ${price$(t.total)} when the boat is confirmed.`, tipped: `${price$(t.total)}, charged now.`, running: `${price$(t.total)}, charged now.`, wait: `Nothing unless you get a seat.` }[st.kind];
+    document.getElementById('done-badge').textContent = { held: state.party > 1 ? 'Spots held' : 'Spot held', tipped: 'Booked', running: 'Booked', wait: 'On the waitlist' }[st.kind];
+    document.getElementById('done-h').textContent = st.kind === 'held' ? `You're on ${w.name}. Check your texts.`
+      : st.kind === 'wait' ? `You're ${ordinal(st.place)} in line for ${w.name}.` : `You're booked on ${w.name}.`;
+    document.getElementById('done-sub').textContent = `A text with these details is on its way to ${F.mobile.value}.`;
+    const rows = [
+      ['Reference', ref],
+      ['Sunday', D.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })],
+      ['Window', `${w.name}, ${timeOfW(w)}${st.backups.length ? `<small>Backups: ${st.backups.map(b => b.name).join(', ')}</small>` : ''}`],
+      ['Travelling', `${ppl}<small>About ${state.gear} lb of bags and gear</small>`],
+      ['Lead', `${F.name.value.trim()}<small>${F.mobile.value}${F.email.value.trim() ? ' · ' + F.email.value.trim() : ''}</small>`],
+      ['Status', statusTxt],
+      ['Price', `${price$(t.total)}<small>${state.party} × ${price$(t.each)}${t.weight ? ` + ${price$(t.weight)} extra weight` : ''}</small>`],
+      ['Charged', charged],
+      ['Exact time', `By text, Saturday 6 pm (${sat})`],
+      ['Cancel free', `Until Saturday 6 pm. After that the seat is yours to hand on.`],
+    ];
+    document.getElementById('conf').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+    document.getElementById('booking-json').textContent = JSON.stringify({
+      reference: ref, route: 'Eastbourne (Keats Island) → Horseshoe Bay', date: iso(D),
+      window: { name: w.name, from: fmt(w.start), to: fmt(w.end) }, backups: st.backups.map(b => b.name),
+      party: state.party, dogs: state.dogs, gear_lb_estimate: state.gear,
+      lead: { name: F.name.value.trim(), mobile: '+1' + digits(), email: F.email.value.trim() || null, extra_runs_optin: F.optin.checked },
+      status: { held: 'held', tipped: 'confirmed', running: 'confirmed', wait: 'waitlist' }[st.kind],
+      price_cad: { per_person: +t.each.toFixed(2), extra_weight: t.weight, total: +t.total.toFixed(2), fuel: FLAGS.fuel === 'tracked' ? 'tracked, locked at booking' : 'flat' },
+      charged_now: st.kind === 'tipped' || st.kind === 'running',
+      exact_time_by: iso(dayBefore(1)) + 'T18:00', free_cancel_until: iso(dayBefore(1)) + 'T18:00',
+      after_cutoff: 'no refund; transferable by text (reply SWAP)',
+      resolve_by_if_unfilled: iso(dayBefore(3)) + 'T18:00',
+    }, null, 2);
+    bookedSig = bookingSig();
+    const done = document.getElementById('step-done');
+    done.hidden = false; done.scrollIntoView({ behavior: 'smooth', block: 'start' }); done.focus({ preventScroll: true });
+  };
+  document.getElementById('copy-link').onclick = e => {
+    try { navigator.clipboard.writeText('https://' + document.getElementById('invite-link').textContent); e.target.textContent = 'Copied'; } catch (err) {}
+  };
+  document.getElementById('change-booking').onclick = () => document.getElementById('step-date').scrollIntoView({ behavior: 'smooth' });
+
+  // ---- Party size
+  const partyOut = document.getElementById('party');
+  const minus = document.getElementById('party-minus'), plus = document.getElementById('party-plus');
+  function renderParty() {
+    partyOut.textContent = state.party;
+    minus.disabled = state.party <= 1; plus.disabled = state.party >= 12;
+  }
+  minus.onclick = () => { const b = state.party; state.party = Math.max(1, b - 1); partyChanged(b); renderParty(); renderGear(); renderPicked(); };
+  plus.onclick  = () => { const b = state.party; state.party = Math.min(12, b + 1); partyChanged(b); renderParty(); renderGear(); renderPicked(); };
+
+  // ---- Bags and gear. 50 lb a person rides free; $7 for each 50 lb (or part of it) over that,
+  //      for the whole booking (Tim, 2026-09-30). An estimate is fine: it's there so Eric sees a
+  //      heavy load coming, and so heavy loads pay a little toward the wear.
+  //      The estimate starts at the free amount and moves 50 lb with each person added or removed,
+  //      keeping any adjustment the passenger already made.
+  const FREE_LB = 50, BLOCK_LB = 50, BLOCK_FEE = 7;
+  const gearMax = () => Math.max(500, FREE_LB * state.party + 300);
+  function partyChanged(before) {
+    state.gear = Math.max(0, Math.min(gearMax(), state.gear + FREE_LB * (state.party - before)));
+  }
+  function gearFee() {
+    const free = FREE_LB * state.party, over = Math.max(0, state.gear - free), blocks = Math.ceil(over / BLOCK_LB);
+    return { free, over, blocks, fee: blocks * BLOCK_FEE };
+  }
+  const gearIn = document.getElementById('gear');
+  function renderGear() {
+    const max = gearMax(), g = gearFee(), pct = lb => Math.min(100, lb / max * 100);
+    gearIn.max = max; gearIn.value = state.gear;
+    document.getElementById('gear-out').textContent = `about ${state.gear}${state.gear >= max ? '+' : ''} lb`;
+    let ticks = '';
+    for (let lb = BLOCK_LB; lb < max; lb += BLOCK_LB) if (lb !== g.free) ticks += `<i class="tick" style="left:${pct(lb)}%"></i>`;
+    document.getElementById('gear-bar').innerHTML =
+      `<i class="free" style="width:${pct(g.free)}%"></i><i class="in" style="width:${pct(Math.min(state.gear, g.free))}%"></i>` +
+      (g.over ? `<i class="over" style="left:${pct(g.free)}%;width:${pct(state.gear) - pct(g.free)}%"></i>` : '') +
+      ticks + `<i class="limit" style="left:${pct(g.free)}%"></i>`;
+    const who = state.party === 1 ? 'you' : `the ${state.party} of you`;
+    document.getElementById('gear-note').innerHTML = g.over
+      ? `${g.free} lb is free for ${who}. About ${g.over} lb over: ${g.blocks} × $${BLOCK_FEE} = <b class="over">$${g.fee} extra</b> for the booking.`
+      : `Free. ${who[0].toUpperCase() + who.slice(1)} can bring up to ${g.free} lb.`;
+  }
+  gearIn.oninput = () => { state.gear = +gearIn.value; renderGear(); renderPicked(); };
+
+  // ---- Dogs
+  const dogsOut = document.getElementById('dogs');
+  const dMinus = document.getElementById('dogs-minus'), dPlus = document.getElementById('dogs-plus');
+  function renderDogs() { dogsOut.textContent = state.dogs; dMinus.disabled = state.dogs <= 0; dPlus.disabled = state.dogs >= 3; }
+  dMinus.onclick = () => { state.dogs = Math.max(0, state.dogs - 1); renderDogs(); renderWindows(); renderPicked(); renderTexts(); };
+  dPlus.onclick  = () => { state.dogs = Math.min(3, state.dogs + 1); renderDogs(); renderWindows(); renderPicked(); renderTexts(); };
+
+  // ---- Selection summary + reveal next step
+  function renderPicked() {
+    const el = document.getElementById('picked');
+    if (!state.date) { el.textContent = ''; return; }
+    const nice = state.date.toLocaleDateString('en-CA', { weekday:'long', month:'long', day:'numeric' });
+    const price = FLAGS.fillDiscount
+      ? `${price$(perPerson(PRICE))} each, ${price$(perPerson(DISCOUNT_PRICE))} if the boat fills`
+      : `${price$(perPerson(PRICE))} each`;
+    const w = state.window && windowsFor(state.date).find(x => x.key === state.window);
+    const win = w ? ` · ${w.name} (${w.point ? 'about ' + fmt(w.start) : fmt(w.start) + ' – ' + fmt(w.end)})` : '';
+    const bk = state.backups.size ? ` · backups: ${windowsFor(state.date).filter(x => state.backups.has(x.key)).map(x => x.name).join(', ')}` : '';
+    const dg = state.dogs ? ` + ${state.dogs} dog${state.dogs === 1 ? '' : 's'}` : '';
+    renderPay();
+    const gf = gearFee(), wt = gf.fee ? ` + $${gf.fee} for extra weight` : '';
+    el.textContent = `${nice} · ${state.party} ${state.party === 1 ? 'person' : 'people'}${dg} · ~${state.gear} lb of gear${win}${bk} · ${price}${wt}`;
+    document.getElementById('step-window').classList.remove('pending');
+  }
+
+  renderCal(); renderParty(); renderDogs(); renderGear(); applyScenario();
+</script>
+</body>
+</html>
