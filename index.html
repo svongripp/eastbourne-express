@@ -329,9 +329,9 @@
   /* ---- business model tab (full width) ---- */
   main.wide { max-width: 1200px; }
   main.wide .lede { max-width: 70ch; }
-  .kpis.k5 { grid-template-columns: repeat(5, 1fr); }
+  .kpis.k4 { grid-template-columns: repeat(4, 1fr); }
   .kpi .v.pos { color: var(--chart-today); }
-  @media (max-width: 760px) { .kpis.k5 { grid-template-columns: repeat(2, 1fr); } .kpis.k5 .kpi:last-child { grid-column: 1 / -1; } }
+  @media (max-width: 760px) { .kpis.k4 { grid-template-columns: repeat(2, 1fr); } }
   .panels { display: grid; grid-template-columns: 3fr 2fr; gap: 16px; margin-bottom: 28px; }
   @media (max-width: 900px) { .panels { grid-template-columns: 1fr; } }
   .panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 16px; }
@@ -636,14 +636,13 @@
 <main id="tab-model" class="wide" role="tabpanel" aria-labelledby="tab-btn-model" hidden>
   <header>
     <div class="kicker">For Eric and Jenny</div>
-    <h1>What more could the year be worth?</h1>
+    <h1>How can we increase revenue and lower costs?</h1>
     <p class="lede">Nine ideas for earning more or spending less, each with its own sliders. These are generalizations, not forecasts: every number is a guess until Eric and Jenny move it to the real one. Switch an idea off to take it out of the total.</p>
   </header>
 
-  <div class="kpis k5">
+  <div class="kpis k4">
     <div class="kpi"><div class="v" id="k-today"></div><div class="l">Sunday Express today, a year (from Bookeo)</div></div>
-    <div class="kpi"><div class="v" id="k-rev"></div><div class="l">new revenue</div></div>
-    <div class="kpi"><div class="v" id="k-cost"></div><div class="l">cost of running it</div></div>
+    <div class="kpi"><div class="v" id="k-rev"></div><div class="l">new revenue, after running costs</div></div>
     <div class="kpi"><div class="v" id="k-saved"></div><div class="l">costs saved</div></div>
     <div class="kpi"><div class="v pos" id="k-net"></div><div class="l">net change a year</div></div>
   </div>
@@ -652,7 +651,7 @@
   <div class="panels">
     <section class="panel">
       <h2>Where the money is</h2>
-      <p class="hint">Net a year for each idea: new revenue plus costs saved, minus what it costs to run. Blue adds to the year, orange takes away. Click a row to jump to its card.</p>
+      <p class="hint">Net a year for each idea: new revenue after its running costs, plus any costs saved. Blue adds to the year, orange takes away. Click a row to jump to its card.</p>
       <div class="mchart" id="mchart"></div>
       <details class="q" style="margin-top:14px">
         <summary>The numbers as a table</summary>
@@ -1107,22 +1106,24 @@
   const SCEN = [
     { key: 'windows', group: 'earn', big: true, short: 'Sunday windows',
       title: 'Book into windows on the Sunday Express',
-      src: 'The booking page on the other tab · today’s Sundays from Bookeo, Sep 2025 to Aug 2026 · Bookeo waitlist, Aug 2025 to Aug 2026',
+      src: 'The booking page on the other tab · today’s sailings from Bookeo, Oct 2025 to Sep 2026 · Bookeo waitlist, Aug 2025 to Aug 2026',
       why: "Windows let Eric add boats once the demand is visible. The riders come from two places: people turned away today because the boats are full, and people today's times don't suit, who'd leave earlier or later. Either way it's another boat, and every boat has to pay for itself. Extra boats earn their keep on long weekends: the waitlist turns away about 5 people on an ordinary summer Sunday, and more than a boatload on a long weekend.",
-      // Levers per season, as a grid of steppers: [rowKey, label, {sum, mid, slow}, min, max].
-      // Today's Sundays (Bookeo, Sep 2025 to Aug 2026, riders per boat day): summer 25.0 → 2 × 12;
-      // medium (Apr, May, Oct, Nov) 16.6 → 2 × 8; slow (Dec–Mar) 13.4 → 1 × 12. Add boats (2026-10-01, Bookeo waitlist): ~5 lost riders a summer
-      // Sunday, spiking on long weekends; almost none in the medium and slow months.
+      // Levers per kind of day, as a grid of steppers: [rowKey, label, {sum, oth, lw}, min, max].
+      // Two seasons plus long weekends (2026-10-02): medium and slow Sundays average the same (12.6 vs
+      // 12.7), and holiday Mondays carry ~30 in any month. Bookeo, Oct 2025 to Sep 2026 (a complete year):
+      // summer Sundays 17 days, 21.1 riders → 2 × 11; other Sundays 29 days, 13.5 → 1 × 12; long-weekend
+      // Mondays 6 days, 29.5 → 3 × 10. Add boats (Bookeo waitlist): ~5 lost riders a summer Sunday, more on
+      // long-weekend Mondays, almost none on other Sundays.
       grid: {
-        cols: [['sum', 'Summer', 'Jun–Sep'], ['mid', 'Medium', '4 months'], ['slow', 'Slow', '4 months']],
+        cols: [['sum', 'Summer Sundays', 'Jun–Sep'], ['oth', 'Other Sundays', 'Oct–May'], ['lw', 'Long weekends', 'holiday Mondays']],
         rows: [
           ['h', 'Today'],
-          ['Days',     'Boat days (Sundays + holiday Mondays)', { sum: 18, mid: 18, slow: 17 }, 0, 30],
-          ['Boats',    'Boats a Sunday',                        { sum: 2,  mid: 2,  slow: 1 },  1, 4],
-          ['Fill',     'People per boat',                       { sum: 12, mid: 8,  slow: 12 }, 1, 12],
+          ['Days',     'Boat days a year',          { sum: 17, oth: 29, lw: 6 },  0, 35],
+          ['Boats',    'Boats a day',               { sum: 2,  oth: 1,  lw: 3 },  1, 4],
+          ['Fill',     'People per boat',           { sum: 11, oth: 12, lw: 10 }, 1, 12],
           ['h', 'Add boats'],
-          ['Extra',    'Extra boats a Sunday',                  { sum: 1,  mid: 0,  slow: 0 },  0, 5],
-          ['ExtraPpl', 'People on each extra boat',             { sum: 7,  mid: 7,  slow: 7 },  1, 12],
+          ['Extra',    'Extra boats a day',         { sum: 1,  oth: 0,  lw: 1 },  0, 5],
+          ['ExtraPpl', 'People on each extra boat', { sum: 7,  oth: 7,  lw: 7 },  1, 12],
         ],
       },
       sliders: [
@@ -1132,7 +1133,7 @@
       calc(v, S) {
         // The fill discount is parked (2026-09-30), so it isn't modelled here.
         const F = FARE_NOW, rc = runCost(S);
-        const SEASONS = [['sum', 'Summer (Jun–Sep)'], ['mid', 'Medium months'], ['slow', 'Slow months']];
+        const SEASONS = [['sum', 'Summer Sundays'], ['oth', 'Other Sundays'], ['lw', 'Long-weekend Mondays']];
         const R = {};
         SEASONS.forEach(([k]) => {
           const days = v[k + 'Days'], boats = v[k + 'Boats'], xb = v[k + 'Extra'], xp = Math.min(v[k + 'ExtraPpl'], SEATS);
@@ -1150,14 +1151,14 @@
         const sum = f => SEASONS.reduce((t, [k]) => t + R[k][f], 0);
         const per = f => SEASONS.map(([k]) => R[k][f]).join(' / ');
         const lines = [
-          [`Extra boats (${per('xb')} a Sunday: summer / medium / slow)`, sum('more'), 'rev'],
+          [`Extra boats (${per('xb')} a day: summer Sundays / other Sundays / long-weekend Mondays)`, sum('more'), 'rev'],
           ['Cancelled and handed-on seats resold instead of sailing empty', sum('resold'), 'rev'],
           [`Running the ${sum('runs')} extra boats`, sum('runs') * rc, 'cost'],
         ];
         const breakEven = Math.ceil(rc / F);
         const notes = [`At these running costs a boat pays for itself at about ${breakEven} people; it only runs at ${MIN_TO_RUN}.`];
-        SEASONS.forEach(([k, lab]) => { if (R[k].xb && v[k + 'ExtraPpl'] < MIN_TO_RUN) notes.push(`Extra boats in the ${lab.toLowerCase()} have ${v[k + 'ExtraPpl']} people, under the ${MIN_TO_RUN} a boat needs to run${v[k + 'ExtraPpl'] < breakEven ? ', and they lose money' : ''}.`); });
-        // Today, plus what the extra boats add, by season (before running costs).
+        SEASONS.forEach(([k, lab]) => { if (R[k].xb && v[k + 'ExtraPpl'] < MIN_TO_RUN) notes.push(`Extra boats on ${lab.replace(/^\w/, c => c.toLowerCase())} have ${v[k + 'ExtraPpl']} people, under the ${MIN_TO_RUN} a boat needs to run${v[k + 'ExtraPpl'] < breakEven ? ', and they lose money' : ''}.`); });
+        // Today, plus what the extra boats add, by kind of day (before running costs).
         const max = Math.max(1, ...SEASONS.map(([k]) => R[k].today + R[k].more)) * 1.02;
         const row = (lab, r) => `<div class="row"><span class="lab">${lab}</span><span class="track">
           <span class="seg today" style="width:${r.today / max * 100}%" data-tip="Today: ${money(r.today)}"><span class="dl">${money(r.today)}</span></span>
@@ -1347,21 +1348,21 @@
   });
   let M = JSON.parse(JSON.stringify(DEF));
   try {
-    let saved = JSON.parse(localStorage.getItem('model.v2') || 'null');
+    let saved = JSON.parse(localStorage.getItem('model.v3') || 'null');
+    if (!saved) {   // v2 → v3 (2026-10-02): windows became two seasons + long weekends; drop its saved values
+      saved = JSON.parse(localStorage.getItem('model.v2') || 'null');
+      if (saved) delete saved.windows;
+    }
     if (!saved) {   // v1 → v2 (2026-09-30): windows became three seasons and runs-home became runs back; drop those two
       saved = JSON.parse(localStorage.getItem('model.v1') || 'null');
       if (saved) { delete saved.windows; delete saved.home; }
     }
     if (saved) Object.keys(M).forEach(k => Object.keys(M[k]).forEach(f => { if (saved[k] && saved[k][f] !== undefined) M[k][f] = saved[k][f]; }));
     if (saved && saved.fuel && saved.fuel.flat === 10) M.fuel.flat = DEF.fuel.flat;   // old default ($10) → $8 (2026-09-30)
-    // Old add-boats defaults (summer 2 × 8, medium 1) → the Bookeo waitlist ones (2026-10-01)
-    const w = saved && saved.windows;
-    if (w && w.sumExtra === 2 && w.sumExtraPpl === 8 && w.midExtra === 1) ['sumExtra', 'sumExtraPpl', 'midExtra'].forEach(k => M.windows[k] = DEF.windows[k]);
-    // Old Today/fare defaults → Bookeo ones (2026-10-01): medium 10 a boat → 8; Friday and dock fare $35 → $42
-    if (w && w.midFill === 10) M.windows.midFill = DEF.windows.midFill;
+    // Old fare default → Bookeo's (2026-10-01): Friday and dock fare $35 → $42
     ['friday', 'docks'].forEach(g => { if (saved && saved[g] && saved[g].fare === 35) M[g].fare = DEF[g].fare; });
   } catch (e) {}
-  const saveModel = () => { try { localStorage.setItem('model.v2', JSON.stringify(M)); } catch (e) {} };
+  const saveModel = () => { try { localStorage.setItem('model.v3', JSON.stringify(M)); } catch (e) {} };
 
   const sliderHTML = (group, a) => a[0] === 'h' ? `<h3>${a[1]}</h3>` :
     `<label><span>${a[1]}${a[7] ? ` <span class="tbc">${a[7]}</span>` : ''}</span><output id="o-${group}-${a[0]}">${unitFmt(a[6], M[group][a[0]], a[5])}</output>` +
@@ -1453,8 +1454,7 @@
     const on = R.filter(x => M.on[x.s.key]);
     const tot = k => on.reduce((t, x) => t + x.r[k], 0);
     document.getElementById('k-today').textContent = money(today);
-    document.getElementById('k-rev').textContent = signed(tot('rev'));
-    document.getElementById('k-cost').textContent = '−' + money(tot('cost'));
+    document.getElementById('k-rev').textContent = signed(tot('rev') - tot('cost'));
     document.getElementById('k-saved').textContent = signed(tot('saved'));
     const kn = document.getElementById('k-net'); kn.textContent = signed(tot('net'));
     kn.classList.toggle('pos', tot('net') >= 0); kn.style.color = tot('net') < 0 ? 'var(--chart-gain)' : '';
@@ -1468,7 +1468,7 @@
     const span = (pos + neg) || 1, zero = neg / span * 100;
     document.getElementById('mchart').innerHTML = rows.map(({ s, r }) => {
       const w = Math.abs(r.net) / span * 100;
-      const tip = `${s.short}: ${signed(r.net)} a year · revenue ${signed(r.rev)}, running −${money(r.cost)}, saved ${signed(r.saved)}${M.on[s.key] ? '' : ' (switched off)'}`;
+      const tip = `${s.short}: ${signed(r.net)} a year · revenue after running costs ${signed(r.rev - r.cost)}, saved ${signed(r.saved)}${M.on[s.key] ? '' : ' (switched off)'}`;
       return `<div class="mrow ${M.on[s.key] ? '' : 'off'}" data-go="${s.key}" data-tip="${tip}">
         <span class="lab">${s.short}</span>
         <span class="trk"><span class="zero" style="left:${zero}%"></span>
@@ -1480,9 +1480,9 @@
       document.getElementById('sc-' + el.dataset.go).scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     wireTips(document.getElementById('mchart'));
-    document.getElementById('mtable').innerHTML = '<tr><th>Idea</th><th>Revenue</th><th>Running cost</th><th>Saved</th><th>Net a year</th></tr>' +
-      rows.map(({ s, r }) => `<tr><td>${s.short}${M.on[s.key] ? '' : ' (off)'}</td><td>${signed(r.rev)}</td><td>−${money(r.cost)}</td><td>${signed(r.saved)}</td><td><b>${signed(r.net)}</b></td></tr>`).join('') +
-      `<tr><td><b>Total, switched on</b></td><td>${signed(tot('rev'))}</td><td>−${money(tot('cost'))}</td><td>${signed(tot('saved'))}</td><td><b>${signed(tot('net'))}</b></td></tr>`;
+    document.getElementById('mtable').innerHTML = '<tr><th>Idea</th><th>Revenue, after running costs</th><th>Saved</th><th>Net a year</th></tr>' +
+      rows.map(({ s, r }) => `<tr><td>${s.short}${M.on[s.key] ? '' : ' (off)'}</td><td>${signed(r.rev - r.cost)}</td><td>${signed(r.saved)}</td><td><b>${signed(r.net)}</b></td></tr>`).join('') +
+      `<tr><td><b>Total, switched on</b></td><td>${signed(tot('rev') - tot('cost'))}</td><td>${signed(tot('saved'))}</td><td><b>${signed(tot('net'))}</b></td></tr>`;
   }
   buildModel();
 
