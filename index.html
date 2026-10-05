@@ -147,6 +147,15 @@
   .win .boat2 .bar { display: block; margin-top: 6px; }
   .win .boat2 .b2 { display: block; margin-top: 6px; }
 
+  .win.maybe { border-style: dashed; }
+  .win.maybe .time { font-style: italic; }
+  .backups label small { color: var(--muted); font-weight: 400; }
+  .pref-g { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 6px 0 -2px; }
+  .sms .bubble.me { margin-left: auto; background: var(--accent); color: var(--accent-ink); border-radius: 16px 16px 4px 16px; }
+  /* Booking variation: window wording vs specific-time wording */
+  body.mode-time .m-window { display: none !important; }
+  body:not(.mode-time) .m-time { display: none !important; }
+
   /* ---- step 3: backups ---- */
   .first-pick { padding: 12px 14px; background: var(--soft); border-radius: 8px; margin-bottom: 12px; }
   .first-pick b { display: block; }
@@ -410,9 +419,15 @@
     <div class="var-grid">
       <div class="var"><span class="var-l">Fuel</span>
         <div class="seg" data-var="fuel"><button type="button" data-v="flat">Flat surcharge</button><button type="button" data-v="tracked">Tracks diesel</button></div></div>
-      <div class="var"><span class="var-l">Windows</span>
+      <div class="var"><span class="var-l">Booking</span>
+        <div class="seg" data-var="mode"><button type="button" data-v="window">Book into a window</button><button type="button" data-v="time">Book a specific time</button></div></div>
+      <div class="var m-window"><span class="var-l">Windows</span>
         <div class="seg" data-var="scheme"><button type="button" data-v="clock">A · same names all year</button><button type="button" data-v="lastboat">B · + "Before sunset"</button></div></div>
-      <div class="var"><span class="var-l">Demand</span>
+      <div class="var m-time"><span class="var-l">Season</span>
+        <div class="seg" data-var="season"><button type="button" data-v="sum">Summer Sunday</button><button type="button" data-v="oth">Off-season Sunday</button><button type="button" data-v="lw">Long weekend</button></div></div>
+      <div class="var m-time"><span class="var-l">Demand</span>
+        <div class="seg" data-var="demand"><button type="button" data-v="typical">Typical</button><button type="button" data-v="full">Busy: first boat full</button><button type="button" data-v="extra">Very busy: extra boat open</button></div></div>
+      <div class="var m-window"><span class="var-l">Demand</span>
         <div class="seg" data-var="busy"><button type="button" data-v="0">Typical</button><button type="button" data-v="1">Busy: 20 want the last boat</button></div></div>
     </div>
     <p class="var-note">Prototype for showing Eric and Jenny. Nothing here is live.</p>
@@ -428,7 +443,15 @@
 
   <!-- Passenger's questions on arrival: for the first-timer or the person just checking. -->
   <div class="qs" aria-label="Before you book">
-    <details class="q">
+    <details class="q m-time">
+      <summary>Just checking how this works?</summary>
+      <div class="a">
+        <p>Pick your Sunday, how many of you, and a boat. Every boat on the list with seats is going: book it and you're on it.</p>
+        <p>If your time is full, join the waitlist and say whether you'd go earlier or later. When enough people want the same boat, it opens and we text you the time.</p>
+        <p>Plans change on the day? Switch to any boat with seats, up to 30 minutes before it leaves.</p>
+      </div>
+    </details>
+    <details class="q m-window">
       <summary>Just checking how this works?</summary>
       <div class="a">
         <p>Pick your Sunday and how many of you are travelling. Then pick the part of the day you'd like to leave — morning, midday, or afternoon — rather than an exact time.</p>
@@ -449,7 +472,14 @@
         <p>The easiest way is to get your neighbours on the same window. You'll see how close each window is to the $30 fare when you pick one, and your card is only charged the final price once the boat is confirmed.</p>
       </div>
     </details>
-    <details class="q">
+    <details class="q m-time">
+      <summary>Will the boat actually run?</summary>
+      <div class="a">
+        <p>Yes. The boats on the list run, full or not. That's Eric and Jenny's promise.</p>
+        <p>Extra boats are different: one opens only once a boat is full and enough people want it: 4 <span class="tbc">TBC</span> for a boat right after another, 7 for a morning boat. Until then it's a waitlist, and nothing is charged.</p>
+      </div>
+    </details>
+    <details class="q m-window">
       <summary>Will the boat actually run?</summary>
       <div class="a">
         <p>A boat runs when about 7 people book the same window. You'll see how close each window is to running before you choose, and if yours hasn't reached 7 by Thursday 6 pm <span class="tbc">TBC</span>, we'll text you your options.</p>
@@ -506,13 +536,22 @@
   <!-- STEP 2 — the passenger's mental model: "how late can I stay?" — pick a window, not a time -->
   <section class="step pending" id="step-window">
     <div class="step-n">Step 2</div>
-    <h2>When would you like to leave?</h2>
-    <p class="hint">Pick the part of the day. We set the exact boat time once we know who's coming.</p>
+    <h2 class="m-window">When would you like to leave?</h2>
+    <p class="hint m-window">Pick the part of the day. We set the exact boat time once we know who's coming.</p>
+    <h2 class="m-time">Which boat?</h2>
+    <p class="hint m-time">Every boat with seats is going. Book it and you're on it.</p>
 
     <div class="windows" id="windows"></div>
     <p class="lastboat-note" id="lastboat-note"></p>
 
-    <details class="q" style="margin-top:14px">
+    <details class="q m-time" style="margin-top:14px">
+      <summary>What if the time I want is full?</summary>
+      <div class="a">
+        <p>Join the waitlist, and say whether you'd go earlier or later. Once a boat is full and enough people want the same boat, Jenny opens it and we text everyone it suits, with the exact time. Reply YES to book; the first replies get the seats.</p>
+        <p>The dashed boats are the ones that could open. Each shows how many people want it so far.</p>
+      </div>
+    </details>
+    <details class="q m-window" style="margin-top:14px">
       <summary>When will I know my boat time?</summary>
       <div class="a">
         <p>By 6 pm Saturday <span class="tbc">TBC</span>, by text. Most people want the last boat, so we set its time first and work back from there: the more of you in a window, the more likely it runs exactly when you'd like.</p>
@@ -536,15 +575,25 @@
   <!-- STEP 3 — strength of preference is behavioural: the backups you tick are how firm you are. -->
   <section class="step pending" id="step-flex">
     <div class="step-n">Step 3</div>
-    <h2>Happy to take another boat if it helps one fill?</h2>
-    <p class="hint">Your first pick stays your first pick. Tick anything else that would also work.</p>
+    <h2 class="m-window">Happy to take another boat if it helps one fill?</h2>
+    <p class="hint m-window">Your first pick stays your first pick. Tick anything else that would also work.</p>
+    <h2 class="m-time" id="flex-h">Would another time suit you better?</h2>
+    <p class="hint m-time" id="flex-hint"></p>
 
     <div class="first-pick" id="first-pick"></div>
     <div class="backups" id="backups"></div>
 
     <div class="rule" id="rule"></div>
 
-    <details class="q" style="margin-top:14px">
+    <details class="q m-time" style="margin-top:14px">
+      <summary>Why tick other times?</summary>
+      <div class="a">
+        <p>It's how extra boats get added. When a boat fills, the ticks show Jenny which way people want to go, earlier or later, and which boat to open next. You're the first to hear when it does.</p>
+        <p>Each choice shows the real boat it points to today. A morning boat or the last boat before sunset runs on its own, so it needs more people (7 <span class="tbc">TBC</span>) than a boat that runs right after another (4 <span class="tbc">TBC</span>).</p>
+        <p>If you're booked and a time you ticked opens, moving is your call: reply YES, or ignore the text and keep your seat. Your old seat goes to the next person waiting.</p>
+      </div>
+    </details>
+    <details class="q m-window" style="margin-top:14px">
       <summary>Why would I tick a backup?</summary>
       <div class="a">
         <p>Boats run when enough people want the same window. If yours is one short and the next one over is running, a backup gets you home instead of a refund.</p>
@@ -552,7 +601,7 @@
         <p>Tick nothing and we take that as "only this window works for me". That's fine too. Your first pick is never moved to make room for someone else — seats go to the first 12 who book.</p>
       </div>
     </details>
-    <details class="q" style="margin-top:0">
+    <details class="q m-window" style="margin-top:0">
       <summary>What if more people want my window than fit on one boat?</summary>
       <div class="a">
         <p>The first 12 to book have the seats. After that you can join the waitlist: you'll see your place in line, and you're next up if someone cancels. If enough people are waiting, a second boat may be added — that's the skipper's call, not a promise.</p>
@@ -683,39 +732,50 @@
   //      fuel is either a flat surcharge or tracks diesel (both read from the Business model tab);
   //      the booking fee is Tim's, $1 to start, $2 once people are used to the service.
   const PRICE = 35, DISCOUNT_PRICE = 30, FILL_AT = 10;   // FILL_AT: TBC with Eric (10 or 12)
-  const FLAGS = { fillDiscount: false, premium: false, scheme: 'clock', fuel: 'flat', fee: 1, busy: false };
+  const FLAGS = { fillDiscount: false, premium: false, mode: 'time', scheme: 'clock', fuel: 'flat', fee: 1, busy: false, demand: 'typical' };
   try {
     // Fill discount parked 2026-09-30 (full boats are heavy boats; Eric's wear problem). Code kept;
     // only ?discount=1 turns it back on for a demo.
     FLAGS.fillDiscount = new URLSearchParams(location.search).get('discount') === '1';
+    FLAGS.mode = localStorage.getItem('scenario.mode') || 'time';   // 'window' or 'time' (book a specific time, 2026-10-05)
     FLAGS.scheme = localStorage.getItem('scenario.scheme') || 'clock';
     FLAGS.fuel = localStorage.getItem('scenario.fuel') || 'flat';
     FLAGS.busy = localStorage.getItem('scenario.busy') === '1';
+    FLAGS.demand = localStorage.getItem('scenario.demand') || 'typical';   // time mode: typical | full | extra
     // Booking fee fixed at $1 for the demo (2026-09-30); $2 later, once people are used to the service.
   } catch (e) {}
   document.getElementById('fill-at').textContent = FILL_AT;
 
-  const VAR_VALUE = { fuel: () => FLAGS.fuel, fee: () => String(FLAGS.fee), disc: () => FLAGS.fillDiscount ? '1' : '0', scheme: () => FLAGS.scheme, busy: () => FLAGS.busy ? '1' : '0' };
+  const VAR_VALUE = { season: () => state.date ? dayKind(state.date) : '', demand: () => FLAGS.demand, mode: () => FLAGS.mode, fuel: () => FLAGS.fuel, fee: () => String(FLAGS.fee), disc: () => FLAGS.fillDiscount ? '1' : '0', scheme: () => FLAGS.scheme, busy: () => FLAGS.busy ? '1' : '0' };
   document.querySelectorAll('.variations .seg').forEach(seg => seg.querySelectorAll('button').forEach(b => b.onclick = () => {
     const k = seg.dataset.var, v = b.dataset.v;
+    if (k === 'season') { pickSeason(v); return applyScenario(); }
+    if (k === 'demand') {
+      FLAGS.demand = v; story = null;
+      if (state.date && state.window && !visibleBoats(state.date).some(x => x.key === state.window)) { state.window = null; state.backups.clear(); }
+      return applyScenario();
+    }
     if (k === 'disc') FLAGS.fillDiscount = v === '1';
     else if (k === 'fee') FLAGS.fee = +v;
     else if (k === 'busy') { FLAGS.busy = v === '1'; story = null; }
     else FLAGS[k] = v;
-    if (k === 'scheme') { state.window = null; state.backups.clear(); }
+    if (k === 'scheme' || k === 'mode') { state.window = null; state.backups.clear(); story = null; }
     applyScenario();
   }));
   function applyScenario() {
     document.body.classList.toggle('discount', FLAGS.fillDiscount);
+    document.body.classList.toggle('mode-time', FLAGS.mode === 'time');
     document.querySelectorAll('.variations .seg').forEach(seg => seg.querySelectorAll('button').forEach(b =>
       b.setAttribute('aria-pressed', b.dataset.v === VAR_VALUE[seg.dataset.var]())));
     document.getElementById('var-sum').textContent = [FLAGS.fuel === 'flat' ? 'flat fuel' : 'fuel tracks diesel',
-      ...(FLAGS.fillDiscount ? ['fill discount'] : []), `windows ${FLAGS.scheme === 'clock' ? 'A' : 'B'}`, ...(FLAGS.busy ? ['busy Sunday'] : [])].join(' · ');
+      ...(FLAGS.fillDiscount ? ['fill discount'] : []), FLAGS.mode === 'time' ? `specific times · ${{ typical: 'typical demand', full: 'first boat full', extra: 'extra boat open' }[FLAGS.demand]}` : `windows ${FLAGS.scheme === 'clock' ? 'A' : 'B'}`, ...(FLAGS.busy && FLAGS.mode !== 'time' ? ['busy Sunday'] : [])].join(' · ');
     try {
       localStorage.setItem('scenario.fillDiscount', FLAGS.fillDiscount ? '1' : '0');
+      localStorage.setItem('scenario.mode', FLAGS.mode);
       localStorage.setItem('scenario.scheme', FLAGS.scheme);
       localStorage.setItem('scenario.fuel', FLAGS.fuel);
       localStorage.setItem('scenario.busy', FLAGS.busy ? '1' : '0');
+      localStorage.setItem('scenario.demand', FLAGS.demand);
     } catch (e) {}
     renderWindows(); renderBackups(); renderPicked(); renderTexts();
     renderModel();   // also re-renders the price, since tracked fuel reads the model's sliders
@@ -757,7 +817,8 @@
   // ---- Fake operator calendar: the operator opens days; Sundays are the default, not the rule.
   const TODAY = new Date(); TODAY.setHours(0,0,0,0);
   const HORIZON_DAYS = 365;   // long, so the demo can show every season
-  const EXTRA_OPEN = ['2026-10-12']; // Thanksgiving Monday
+  // Long-weekend Mondays: Thanksgiving, Family Day, Easter Monday, Victoria Day, BC Day, Labour Day
+  const EXTRA_OPEN = ['2026-10-12', '2027-02-15', '2027-03-29', '2027-05-24', '2027-08-02', '2027-09-06'];
   const iso = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   function isOpen(d) {
     const diff = (d - TODAY) / 864e5;
@@ -797,7 +858,7 @@
     cal.querySelectorAll('.day.open').forEach(b => b.onclick = () => {
       const [y,mo,da] = b.dataset.iso.split('-').map(Number);
       state.date = new Date(y, mo-1, da); state.window = null; state.backups.clear();
-      renderCal(); renderWindows(); renderPicked();
+      renderCal(); applyScenario();
     });
   }
 
@@ -876,6 +937,7 @@
   }
 
   function renderWindows() {
+    if (FLAGS.mode === 'time') return renderTimes();
     const box = document.getElementById('windows'), note = document.getElementById('lastboat-note');
     if (!state.date) { box.innerHTML = ''; note.textContent = ''; return; }
     const ws = windowsFor(state.date), L = lastBoatMin(state.date);
@@ -914,6 +976,7 @@
 
   // ---- Step 3: backups. The rule text is the deal, in plain words, so an agent can read it too.
   function renderBackups() {
+    if (FLAGS.mode === 'time') return renderPrefs();
     const fp = document.getElementById('first-pick'), box = document.getElementById('backups'), rule = document.getElementById('rule');
     if (!state.date || !state.window) { fp.innerHTML = ''; box.innerHTML = ''; rule.innerHTML = ''; return; }
     const ws = windowsFor(state.date);
@@ -950,6 +1013,309 @@
     renderPay();
   }
 
+
+  // ---- "Book a specific time" (Tim, 2026-10-05, after his talk with Jenny). Each day starts with the
+  //      boats Eric and Jenny are sure of, at set times: booked means going, full or not. Extra boats
+  //      open only once a boat is full and enough people want one. Riders say which way they'd move
+  //      (a little earlier, as early as possible, a little later, as late as possible); each choice
+  //      maps to a real boat time, so every offer they get names an exact time.
+  //      Spacing (Tim, 2026-10-05): runs 1 h 15 apart (Jenny: an hour is too tight and burns fuel).
+  //      Runs are exactly GAP apart on one fixed grid all year. Every fourth slot lands on the hour, so
+  //      the anchor (the popular boat) is chosen so the boats that usually run stay off the hour and
+  //      15 min clear of the Stormaway (9:10 am, 4:25 pm). Sunset only decides how many slots run: the
+  //      last boat leaves at least LAST_BOAT_MARGIN (an hour, TBC) before sunset. Around December, when
+  //      the main boat no longer fits, it moves one slot earlier (a winter timetable, not variable times).
+  const GAP = 75;
+  const MIN_EXTRA = 4;        // TBC with Eric: a back-to-back run he skippers costs ~fuel + wear, so it pays at ~3 at $42
+  const MIN_STANDALONE = 7;   // a run that breaks up Eric's day (a morning boat) needs a first boat's worth
+  const MORNING = 9 * 60 + 45;                    // TBC with Eric and Jenny: the agreed morning time
+  const chain = (A, k) => A + GAP * k;
+  // Per kind of day: the popular boat (anchor), the set boats and the extra boats as steps of GAP from it.
+  // Bookeo: 3 pm is the usual single boat; in summer 4 and 5 pm fill. TBC with Jenny.
+  const PLAN = {
+    sum: { anchor: 15 * 60 + 30, set: [0, 1], extra: [2, -1] },        // 3:30, 4:45 · 6:00, 2:15
+    oth: { anchor: 15 * 60 + 30, set: [0], extra: [1, -1] },           // 3:30 · 4:45, 2:15
+    lw:  { anchor: 15 * 60 + 30, set: [0, -1, 1], extra: [2, -2] },    // 3:30, 2:15, 4:45 · 6:00, 1:00
+  };
+  const dayKind = d => d.getDay() !== 0 ? 'lw' : d.getMonth() >= 5 && d.getMonth() <= 8 ? 'sum' : 'oth';
+  const lastDeparture = d => Math.round(sunsetMin(d)) - LAST_BOAT_MARGIN;
+  function boatsFor(d) {
+    const L = lastDeparture(d), p = PLAN[dayKind(d)], out = [];
+    const A = p.anchor <= L ? p.anchor : p.anchor - GAP;   // winter timetable: the main boat one slot earlier
+    // One skipper: a boat can't leave less than GAP after another, so a slot that crowds one is dropped.
+    const add = (t, set, rank, kind) => {
+      if (t > L || t < MORNING || out.some(x => Math.abs(x.t - t) < GAP)) return;
+      out.push({ key: 't' + t, t, name: fmt(t), set, rank, kind });
+    };
+    p.set.forEach((k, i) => add(chain(A, k), true, i, 'set'));
+    p.extra.forEach(k => add(chain(A, k), false, out.filter(x => x.kind === 'extra').length, 'extra'));
+    let k = 0; while (chain(A, k + 1) <= L) k++;
+    add(chain(A, k), false, out.filter(x => x.kind === 'extra').length, 'extra');   // the last slot before sunset: "as late as possible"
+    add(MORNING, false, 9, 'morning');          // "as early as possible"
+    return out.sort((a, b) => a.t - b.t);
+  }
+  // Demo demand, set by the Demand variation: typical (set boats with seats), full (the popular boat
+  // is full and extra boats are forming), or extra (every set boat full, the first extra boat open).
+  const DEMO_BOOKED = {
+    typical: { sum: [9, 6], oth: [7], lw: [10, 8, 5] },
+    full:    { sum: [SEATS, 9], oth: [SEATS], lw: [SEATS, SEATS, 7] },
+    extra:   { sum: [SEATS, SEATS], oth: [SEATS], lw: [SEATS, SEATS, SEATS] },
+  };
+  const DEMO_WANT = {   // people who'd take each could-open boat
+    typical: { 0: 2, 1: 1, 2: 1, morning: 2 },
+    full:    { 0: 2, 1: 1, 2: 3, morning: 3 },
+    extra:   { 0: 6, 1: 2, 2: 3, morning: 5 },
+  };
+  function boatDemand(d, b) {
+    if (b.set) return { booked: DEMO_BOOKED[FLAGS.demand][dayKind(d)][b.rank] ?? 6, want: 0 };
+    const W = DEMO_WANT[FLAGS.demand];
+    return { booked: 0, want: (b.kind === 'extra' ? W[b.rank] : W[b.kind]) ?? 1 };
+  }
+  const fullBoat = d => boatsFor(d).find(b => b.set && boatDemand(d, b).booked >= SEATS);
+  // Back to back with a set boat → MIN_EXTRA; on its own (the morning boat, a late one with a gap) → MIN_STANDALONE.
+  const minFor = (d, b) => b.kind !== 'morning' && boatsFor(d).some(x => x.set && Math.abs(x.t - b.t) <= GAP + 30) ? MIN_EXTRA : MIN_STANDALONE;
+  function boatState(d, b) {
+    const dm = boatDemand(d, b);
+    if (b.set) return { ...dm, open: true, full: dm.booked >= SEATS };
+    const open = !!fullBoat(d) && dm.want >= minFor(d, b);   // those who said yes are aboard
+    return { ...dm, open, booked: open ? dm.want : 0, full: false };
+  }
+  // Step 2 lists the boats you can book. Could-open boats only appear once a boat is full: that's when
+  // they can open, and when the counts of who wants them are worth showing.
+  const visibleBoats = d => { const full = fullBoat(d); return boatsFor(d).filter(b => boatState(d, b).open || full); };
+  // The Season variation jumps to the next date of that kind (a July Sunday for summer).
+  function pickSeason(kind) {
+    const d = new Date(TODAY);
+    for (let i = 0; i <= HORIZON_DAYS; i++, d.setDate(d.getDate() + 1)) {
+      if (!isOpen(d) || dayKind(d) !== kind) continue;
+      if (kind === 'sum' && d.getMonth() !== 6) continue;
+      const next = new Date(d); next.setDate(d.getDate() + 1);
+      if (kind === 'oth' && EXTRA_OPEN.includes(iso(next))) continue;   // not a long weekend's Sunday
+      state.date = new Date(d); state.month = new Date(d.getFullYear(), d.getMonth(), 1);
+      state.window = null; state.backups.clear(); story = null;
+      renderCal();
+      return;
+    }
+  }
+  // Which way a rider would move, and the real boat each choice points to today.
+  const PREFS = [
+    { key: 'earlier', group: 'Earlier', name: 'A little earlier' },
+    { key: 'early',   group: 'Earlier', name: 'As early as possible', sub: 'a morning boat' },
+    { key: 'later',   group: 'Later',   name: 'A little later' },
+    { key: 'late',    group: 'Later',   name: 'As late as possible', sub: 'the last boat before sunset' },
+  ];
+  function prefTarget(key, from, bs) {
+    const before = bs.filter(x => x.t < from.t), after = bs.filter(x => x.t > from.t);
+    if (key === 'early') return bs.find(x => x.kind === 'morning' && x.t < from.t) || null;
+    if (key === 'late') return after.length ? after[after.length - 1] : null;
+    if (key === 'earlier') { const c = before.filter(x => x.kind !== 'morning'); return c.length ? c[c.length - 1] : null; }
+    if (key === 'later') return after.length > 1 ? after[0] : null;   // with one later boat, that's "as late as possible"
+  }
+  const prefTargets = (from, bs, keys) => [...new Set([...keys].map(k => prefTarget(k, from, bs)).filter(Boolean))].sort((a, b) => a.t - b.t);
+  function myStatus() {
+    const D = state.date, bs = boatsFor(D), b = bs.find(x => x.key === state.window), s = boatState(D, b);
+    return { D, b, s, wait: !s.open || SEATS - s.booked < state.party, prefs: prefTargets(b, bs, state.backups),
+             prefNames: PREFS.filter(p => state.backups.has(p.key)).map(p => p.name.toLowerCase()) };
+  }
+
+  function renderTimes() {
+    const box = document.getElementById('windows'), note = document.getElementById('lastboat-note');
+    if (!state.date) { box.innerHTML = ''; note.textContent = ''; return; }
+    const D = state.date, full = fullBoat(D), bs = boatsFor(D), lastT = Math.max(...bs.map(x => x.t));
+    const from = state.window && bs.find(x => x.key === state.window);
+    const mineSet = from ? prefTargets(from, bs, state.backups).map(x => x.key) : [];
+    box.innerHTML = visibleBoats(D).map(b => {
+      const s = boatState(D, b), mine = mineSet.includes(b.key) ? 1 : 0, need = minFor(D, b);
+      let status, bar = '', time;
+      if (s.open) {
+        bar = `<span class="bar"><i style="width:${Math.min(1, s.booked / SEATS) * 100}%"></i></span>`;
+        time = b.set ? 'going' : 'extra boat, going';
+        status = s.full ? `<span class="go">Full</span> · ${SEATS} booked · tap to join the waitlist`
+          : `<span class="go">Going</span> · ${s.booked} booked · ${SEATS - s.booked} seats left`;
+        status += ` · ${dogLine(fakeDogs(D, Math.round(b.t / 60) % 5))}`;
+      } else {
+        time = b.kind === 'morning' ? 'morning boat, could open' : b.t === lastT ? 'last before sunset, could open' : 'could open';
+        const want = s.want + mine;
+        status = full
+          ? `${want} want this time · <span class="go">${need - want > 0 ? `${need - want} more and it opens` : "that's enough: it opens"}</span>`
+          : `${want ? `${want} would take it · ` : ''}opens once a boat is full and ${need} people want it`;
+      }
+      return `<button type="button" class="win ${s.open ? '' : 'maybe'} ${state.window === b.key ? 'selected' : ''}" data-key="${b.key}" aria-pressed="${state.window === b.key}">
+        <span class="name">${b.name}${b.set ? '' : ' <small>· extra boat</small>'}</span><span class="time">${time}</span>
+        ${bar}<span class="status">${status}</span></button>`;
+    }).join('');
+    note.innerHTML = `<b>Sunset ${fmt(Math.round(sunsetMin(D)))}.</b> The last boat leaves at least an hour before <span class="tbc">TBC</span>, so ${fmt(lastT)} is the last one on this date. Boats leave 1 hour 15 apart.`;
+    box.querySelectorAll('.win').forEach(b => b.onclick = () => {
+      state.window = b.dataset.key; state.backups.clear(); story = null;
+      renderWindows(); renderBackups(); renderPicked(); renderTexts();
+      document.getElementById('step-flex').classList.remove('pending');
+    });
+  }
+
+  function renderPrefs() {
+    const fp = document.getElementById('first-pick'), box = document.getElementById('backups'), rule = document.getElementById('rule');
+    if (!state.date || !state.window) {
+      fp.innerHTML = ''; box.innerHTML = ''; rule.innerHTML = '';
+      document.getElementById('flex-hint').textContent = 'Pick a boat first.';
+      return;
+    }
+    const { D, b, s, wait, prefs } = myStatus(), bs = boatsFor(D);
+    document.getElementById('flex-h').textContent = wait ? 'Which other times would work?' : 'Would another time suit you better?';
+    document.getElementById('flex-hint').textContent = wait
+      ? 'Tick every way you could go. When enough people want the same boat, it opens and we text you the time.'
+      : "You're booked. If you'd rather leave earlier or later, say so. If a boat opens that fits, we'll text you the time and you can move.";
+    fp.innerHTML = wait
+      ? `<b>Waitlist: the ${b.name} boat ${s.open ? 'is full' : "isn't running yet"}</b><span>Nothing is charged unless you get a seat.</span>`
+      : `<b>Booked: the ${b.name} boat</b><span>It's going, and you're on it.</span>`;
+    const opt = p => {
+      const x = prefTarget(p.key, b, bs);
+      if (!x) return '';
+      const xs = boatState(D, x), mine = state.backups.has(p.key);
+      const info = xs.open ? `${x.name} · ${xs.full ? 'full' : `going · ${SEATS - xs.booked} seats left`}`
+        : `${x.name} · could open · ${xs.want + (mine ? 1 : 0)} want it`;
+      return `<label><input type="checkbox" data-key="${p.key}" ${mine ? 'checked' : ''}>
+        <span>${p.name}${p.sub ? ` <small>${p.sub}</small>` : ''}</span><span class="time">${info}</span></label>`;
+    };
+    box.innerHTML = ['Earlier', 'Later'].map(g => {
+      const rows = PREFS.filter(p => p.group === g).map(opt).join('');
+      return rows ? `<h3 class="pref-g">${g}</h3>${rows}` : '';
+    }).join('') || `<p class="hint">No other boats today before sunset.</p>`;
+    box.querySelectorAll('input').forEach(cb => cb.onchange = () => {
+      cb.checked ? state.backups.add(cb.dataset.key) : state.backups.delete(cb.dataset.key);
+      renderWindows(); renderBackups(); renderPicked(); renderTexts();
+    });
+    const names = prefs.map(x => x.name).join(' or ');
+    const heavy = gearFee().over > 0
+      ? `<p>Your booking has heavy gear, so a switch needs a quick OK from Jenny first.</p>` : '';
+    const sw = `<p>Plans change on the day? Switch to any boat with seats, up to 30 minutes before it leaves. Reply SWITCH to your booking text.</p>`;
+    if (wait) {
+      const sure = bs.find(x => x.key !== b.key && boatState(D, x).open && SEATS - boatState(D, x).booked >= state.party);
+      const sureP = sure ? `<p>The ${sure.name} boat has seats now, if you'd rather be sure.</p>` : '';
+      rule.innerHTML = sureP + (names
+        ? `<p><b>Waiting for the ${b.name}, or ${names}.</b> When one of them opens, we text everyone who wants it. The first to reply YES get the seats.</p><p>Nothing is charged unless you get a seat.</p>`
+        : `<p><b>Only the ${b.name} works for you.</b> If a seat opens, it's yours, in waitlist order. Tick a direction to be in line for an extra boat too.</p>`);
+    } else {
+      rule.innerHTML = (names
+        ? `<p><b>You're on the ${b.name} boat.</b> If ${names} opens, we'll text you first: reply YES to move, or ignore it and keep your seat. Moving frees your seat for someone on the waitlist.</p>`
+        : `<p><b>You're on the ${b.name} boat.</b> It's going, full or not.</p>`) + sw + heavy;
+    }
+    if (LIVE_STEPS) document.getElementById('step-contact').classList.remove('pending');
+    renderPay();
+  }
+
+  const TSTORIES = {
+    booked: [['going', "You're going"], ['opens', 'Your preferred time opens'], ['switch', 'Switching on the day']],
+    wait: [['yes', 'A boat opens'], ['late', 'You reply too late'], ['none', 'No boat opens']],
+  };
+  function renderTextsTime() {
+    const box = document.getElementById('sms'), sample = !state.date || !state.window;
+    const D = sample ? sampleDate() : state.date, bs = boatsFor(D);
+    const b = sample ? bs.find(x => x.set && x.rank === 0) : bs.find(x => x.key === state.window);
+    const party = sample ? 2 : state.party, dogs = sample ? 0 : state.dogs;
+    const s = boatState(D, b), wait = !s.open || SEATS - s.booked < party;
+    const prefs = prefTargets(b, bs, sample ? new Set(['later']) : state.backups);
+    const set = wait ? TSTORIES.wait : TSTORIES.booked;
+    if (story && !set.some(([k]) => k === story)) story = null;
+    const st = story || (wait ? 'yes' : prefs.length ? 'opens' : 'going');
+    segBox.innerHTML = set.map(([k, l]) => `<button type="button" data-story="${k}" aria-pressed="${k === st}">${l}</button>`).join('');
+    segBox.querySelectorAll('button').forEach(x => x.onclick = () => { story = x.dataset.story; renderTexts(); });
+
+    const day = n => new Date(D.getFullYear(), D.getMonth(), D.getDate() + n);
+    const dd = (d, t) => d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' }) + (t ? ' · ' + t : '');
+    const sun = dd(D), dayName = D.toLocaleDateString('en-CA', { weekday: 'long' });
+    const ppl = `${party} ${party === 1 ? 'person' : 'people'}${dogs ? ` + ${dogs} dog${dogs === 1 ? '' : 's'}` : ''}`;
+    const seats = party === 1 ? 'your seat' : `your ${party} seats`;
+    document.getElementById('texts-for').textContent = sample
+      ? `For an example booking: ${ppl} on the ${b.name} boat, ${sun}, who'd also take ${prefs.map(x => x.name).join(', ') || 'another time'}. Pick a date and boat above to see yours.`
+      : 'For the booking above, on the real dates.';
+    const link = 'eastbourneexpress.ca/j/K7Q2';
+    const cost = price$(perPerson(PRICE) * party + (sample ? 0 : gearFee().fee));
+    const heavy = !sample && gearFee().over > 0;
+    const dock = t => fmt(t - 10);
+    const M = [];   // [when, text, why, fromRider]
+    const say = (when, text, why) => M.push([when, text, why, false]);
+    const me = (when, text) => M.push([when, text, '', true]);
+    const friday = x => say(dd(day(-2), '9:00 am'),
+      `You're set for ${dayName}: the ${x.name} boat, ${ppl}. Be on the dock by ${dock(x.t)}.`,
+      'before they leave the city; the time has been fixed since they booked');
+    const sunday = x => say(dd(D, fmt(x.t - 15)),
+      `Eric's about 15 minutes out. ${Math.max(3, Math.min(SEATS, boatState(D, x).booked || MIN_EXTRA) - 2)} checked in.`,
+      "the dock wait, fixed from the boat's side (GPS) and the skipper's side (who's here)");
+
+    if (!wait) {
+      const also = prefs.length ? `\nYou'd also take ${prefs.map(x => x.name).join(' or ')}: if it opens, we'll text you.` : '';
+      say(dd(TODAY, 'just now'),
+        `Eastbourne Express: you're booked on the ${b.name} boat, ${sun}, ${ppl}. It's going. ${cost} charged; cancel free until Saturday 6 pm.${also}\nInvite a friend: ${link}`,
+        'booked means going: a set time, and the boat runs full or not');
+      const other = prefs.find(x => x.key !== b.key) || bs.find(x => !x.set && x.key !== b.key);
+      if (st === 'opens' && other) {
+        say(dd(day(-3), '11:00 am'),
+          `The ${other.name} boat is opening on ${sun}, a time you said would suit you. Reply YES to move ${seats} there, or ignore this and keep the ${b.name}. First replies get the seats.`,
+          `it opens because a boat filled and enough people wanted ${other.name}; only people whose choice points to it get this`);
+        me(dd(day(-3), '11:04 am'), 'YES');
+        say(dd(day(-3), '11:04 am'),
+          `Done: you're on the ${other.name} boat, ${ppl}. Dock by ${dock(other.t)}. Your ${b.name} ${party === 1 ? 'seat went' : 'seats went'} to the next person on the waitlist.`,
+          'every move frees a seat on the full boat for someone else: that is where the extra fares come from');
+        friday(other); sunday(other);
+      } else if (st === 'switch') {
+        friday(b);
+        const later = bs.find(x => x.t > b.t && boatState(D, x).open && !boatState(D, x).full)
+                   || bs.find(x => x.key !== b.key && boatState(D, x).open && !boatState(D, x).full);
+        const when = dd(D, fmt(b.t - 75));
+        if (!later) {
+          me(when, 'SWITCH');
+          say(when, `The ${b.name} is the only boat with seats today, so there's nothing to switch to. Running late? Reply SWAP to hand ${seats} to someone else.`,
+            'an honest answer when there is no other boat; the seat is still theirs to hand on');
+          sunday(b);
+        } else {
+          me(when, `SWITCH ${later.name}`);
+          if (heavy) {
+            say(when, `Your booking has heavy gear, so Jenny checks the ${later.name} has room first. You're on the ${b.name} until she replies, usually within a few minutes.`,
+              'heavy items are the one exception: a switch needs a check');
+            say(dd(D, fmt(b.t - 68)), `All good: you're on the ${later.name} boat, ${ppl}. Dock by ${dock(later.t)}.`, 'Jenny taps OK; the rest is automatic');
+          } else {
+            say(when, `Done: you're on the ${later.name} boat instead, ${ppl}. Dock by ${dock(later.t)}. No charge to switch.`,
+              "the 30-minute switch: any running boat with seats, by text, no call to Jenny; Eric's list updates itself");
+          }
+          sunday(later);
+        }
+      } else {
+        friday(b); sunday(b);
+      }
+    } else {
+      const list = [b, ...prefs].map(x => x.name).join(', ');
+      say(dd(TODAY, 'just now'),
+        `Eastbourne Express: the ${b.name} boat on ${sun} is ${s.open ? 'full' : 'not running yet'}. You're on the waitlist for ${list}, ${ppl}. When enough people want the same boat, it opens and we'll text you the time. Nothing is charged unless you get a seat.\nInvite: ${link}`,
+        'the waitlist promises nothing, and says exactly what would open a boat');
+      const target = prefs.find(x => !x.set && !boatState(D, x).open) || (b.set ? null : b) || bs.find(x => !x.set);
+      const fb = fullBoat(D);
+      if (st !== 'none' && target) {
+        const offer = dd(day(-2), '10:00 am');
+        say(offer,
+          `The ${target.name} boat is opening on ${sun}. Reply YES to book ${party === 1 ? 'a seat' : `${party} seats`} (${cost}), or NO to pass. First replies get the seats.`,
+          `${fb ? `the ${fb.name} is full and ` : ''}enough people ticked ${target.name}, so it pays to run`);
+        if (st === 'yes') {
+          me(dd(day(-2), '10:12 am'), 'YES');
+          say(dd(day(-2), '10:12 am'),
+            `You're on the ${target.name} boat, ${ppl}. ${cost} charged. Dock by ${dock(target.t)}. Cancel free until Saturday 6 pm.`,
+            'yes is the booking: the card is already on file');
+          friday(target); sunday(target);
+        } else {
+          me(dd(day(-2), '4:30 pm'), 'YES');
+          say(dd(day(-2), '4:30 pm'),
+            `Sorry, the ${target.name} filled before your reply. You're still on the waitlist: if a seat opens on any of your times, we'll text you. Nothing charged.`,
+            'first replies win; a late yes gets a straight answer, not silence');
+        }
+      } else {
+        say(dd(day(-1), '6:00 pm'),
+          `No extra boat on ${sun}: not enough people could make the same time. You're still on the waitlist if a seat opens, and nothing is charged.\nThe Stormaway leaves Eastbourne 4:25 pm (request by text to 604-740-6589 an hour before).`,
+          'an honest no a day ahead, with a real alternative');
+      }
+    }
+    box.innerHTML = M.map(([when, text, why, mine]) =>
+      `<div class="when">${when}</div><div class="bubble${mine ? ' me' : ''}">${text}</div>${why ? `<div class="why">${why}</div>` : ''}`).join('');
+  }
+
   // ---- The texts. Dates are relative to the chosen Sunday. The italic "why" lines are for the
   //      demo (explaining each message to Eric and Jenny), not something a passenger sees.
   let story = null;   // null = pick from the window's fake state
@@ -963,6 +1329,7 @@
   // Until a date and window are picked, the texts use an example booking so they can be shown any time.
   function sampleDate() { const d = new Date(TODAY); d.setDate(d.getDate() + 7); while (!isOpen(d)) d.setDate(d.getDate() + 1); return d; }
   function renderTexts() {
+    if (FLAGS.mode === 'time') return renderTextsTime();
     const box = document.getElementById('sms'), sample = !state.date || !state.window;
     const D = sample ? sampleDate() : state.date, ws = windowsFor(D);
     const w = sample ? ws[ws.length - 1] : ws.find(x => x.key === state.window), idx = ws.indexOf(w);
@@ -1540,10 +1907,11 @@
     const each = perPerson(PRICE), g = gearFee();
     return { each, weight: g.fee, total: each * state.party + g.fee, fuel: fuelCharge() };
   }
-  const bookingSig = () => JSON.stringify([state.date && iso(state.date), state.window, [...state.backups].sort(), state.party, state.dogs, state.gear, FLAGS.fuel, F.name.value, digits()]);
+  const bookingSig = () => JSON.stringify([FLAGS.mode, state.date && iso(state.date), state.window, [...state.backups].sort(), state.party, state.dogs, state.gear, FLAGS.fuel, F.name.value, digits()]);
   let bookedSig = null;
 
   function renderPay() {
+    if (FLAGS.mode === 'time') return renderPayTime();
     const sec = document.getElementById('step-pay'), btn = document.getElementById('hold'), why = document.getElementById('hold-why');
     if (!state.date || !state.window) { sec.classList.add('pending'); btn.disabled = true; return; }
     if (bookedSig && bookedSig !== bookingSig()) { document.getElementById('step-done').hidden = true; bookedSig = null; }
@@ -1586,6 +1954,7 @@
   }
 
   document.getElementById('hold').onclick = () => {
+    if (FLAGS.mode === 'time') return holdTime();
     const st = bookingStatus(), t = totals(), w = st.w, D = state.date, sat = shortDay(dayBefore(1));
     const ref = 'EX-' + (iso(D).replace(/-/g, '').slice(2) + state.window.slice(0, 2)).toUpperCase() + digits().slice(-2);
     const ppl = `${state.party} ${state.party === 1 ? 'person' : 'people'}${state.dogs ? ` + ${state.dogs} dog${state.dogs === 1 ? '' : 's'}` : ''}`;
@@ -1624,6 +1993,75 @@
     const done = document.getElementById('step-done');
     done.hidden = false; done.scrollIntoView({ behavior: 'smooth', block: 'start' }); done.focus({ preventScroll: true });
   };
+
+  // ---- Step 5 and the confirmation, for "Book a specific time".
+  function renderPayTime() {
+    const sec = document.getElementById('step-pay'), btn = document.getElementById('hold'), why = document.getElementById('hold-why');
+    if (!state.date || !state.window) { sec.classList.add('pending'); btn.disabled = true; return; }
+    if (bookedSig && bookedSig !== bookingSig()) { document.getElementById('step-done').hidden = true; bookedSig = null; }
+    if (LIVE_STEPS) sec.classList.remove('pending');
+    const { b, s, wait, prefs } = myStatus(), t = totals(), sat = shortDay(dayBefore(1));
+    const names = prefs.map(x => x.name).join(' or ');
+    const deal = wait ? [
+      `The ${b.name} boat is ${s.open ? 'full' : 'not running yet'}. You're on the waitlist${names ? ` for it and for ${names}` : ''}.`,
+      `When enough people want the same boat, it opens and we text you the time. Reply YES to book; the first replies get the seats.`,
+      'Nothing is charged unless you get a seat.',
+    ] : [
+      `The ${b.name} boat is going. You're on it, however full it gets.`,
+      names ? `If ${names} opens, we'll text you first, and you can move or stay.` : null,
+      `Plans change on the day? Switch to any boat with seats, up to 30 minutes before it leaves.${gearFee().over ? ' With heavy gear, a switch needs a quick OK first.' : ''}`,
+      `Cancel free until Saturday 6 pm (${sat}). After that the seat is yours to hand on.`,
+    ].filter(Boolean);
+    document.getElementById('deal').innerHTML = deal.map(d => `<li>${d}</li>`).join('');
+    document.getElementById('pay-sum').innerHTML =
+      `<tr><td>${state.party} × ${price$(t.each)}<small>fare, fuel${FLAGS.fuel === 'tracked' ? ` (locked at ${price$(t.fuel)})` : ''}, booking fee</small></td><td>${price$(t.each * state.party)}</td></tr>` +
+      (t.weight ? `<tr><td>Extra weight<small>about ${state.gear} lb, ${gearFee().over} lb over</small></td><td>${price$(t.weight)}</td></tr>` : '') +
+      `<tr class="total"><td>Total</td><td>${price$(t.total)}</td></tr>`;
+    document.getElementById('charge-note').textContent = wait
+      ? 'Nothing is charged unless you get a seat.'
+      : `${price$(t.total)} is charged when you book. Cancel free until Saturday 6 pm.`;
+    const one = state.party === 1;
+    btn.textContent = wait ? 'Join the waitlist' : one ? 'Book my seat' : 'Book our seats';
+    btn.disabled = !contactOK();
+    why.textContent = contactOK() ? 'Demo: nothing is charged and no text is sent.' : 'Add a name and mobile at step 4 first.';
+  }
+  function holdTime() {
+    const { D, b, wait, prefs } = myStatus(), t = totals();
+    const ref = 'EX-' + iso(D).replace(/-/g, '').slice(2) + 'T' + (b.t / 60) + digits().slice(-2);
+    const ppl = `${state.party} ${state.party === 1 ? 'person' : 'people'}${state.dogs ? ` + ${state.dogs} dog${state.dogs === 1 ? '' : 's'}` : ''}`;
+    document.getElementById('done-badge').textContent = wait ? 'On the waitlist' : 'Booked';
+    document.getElementById('done-h').textContent = wait ? `You're on the waitlist for the ${b.name} boat.` : `You're booked on the ${b.name} boat.`;
+    document.getElementById('done-sub').textContent = `A text with these details is on its way to ${F.mobile.value}.`;
+    const rows = [
+      ['Reference', ref],
+      ['Date', D.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })],
+      ['Boat', `${b.name} from Eastbourne<small>On the dock by ${fmt(b.t - 10)}</small>`],
+      ['Other times', prefs.length ? prefs.map(x => x.name).join(', ') + `<small>${wait ? "We'll text you if one opens" : "If one opens, we'll text you and you can move"}</small>` : 'None ticked'],
+      ['Travelling', `${ppl}<small>About ${state.gear} lb of bags and gear</small>`],
+      ['Lead', `${F.name.value.trim()}<small>${F.mobile.value}${F.email.value.trim() ? ' · ' + F.email.value.trim() : ''}</small>`],
+      ['Status', wait ? 'Waitlist' : 'Confirmed. The boat is going.'],
+      ['Price', `${price$(t.total)}<small>${state.party} × ${price$(t.each)}${t.weight ? ` + ${price$(t.weight)} extra weight` : ''}</small>`],
+      ['Charged', wait ? 'Nothing unless you get a seat.' : `${price$(t.total)}, charged now.`],
+      ['Switch', 'To any boat with seats, up to 30 minutes before it leaves. Reply SWITCH.'],
+      ['Cancel free', 'Until Saturday 6 pm. After that the seat is yours to hand on.'],
+    ];
+    document.getElementById('conf').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+    document.getElementById('booking-json').textContent = JSON.stringify({
+      reference: ref, route: 'Eastbourne (Keats Island) → Horseshoe Bay', date: iso(D),
+      boat: { departs: fmt(b.t), scheduled: b.set }, other_times_that_work: prefs.map(x => x.name),
+      party: state.party, dogs: state.dogs, gear_lb_estimate: state.gear,
+      lead: { name: F.name.value.trim(), mobile: '+1' + digits(), email: F.email.value.trim() || null, extra_runs_optin: F.optin.checked },
+      status: wait ? 'waitlist' : 'confirmed',
+      price_cad: { per_person: +t.each.toFixed(2), extra_weight: t.weight, total: +t.total.toFixed(2), fuel: FLAGS.fuel === 'tracked' ? 'tracked, locked at booking' : 'flat' },
+      charged_now: !wait,
+      switch_until: '30 minutes before departure, to any boat with seats' + (gearFee().over ? '; heavy gear needs an OK first' : ''),
+      free_cancel_until: iso(dayBefore(1)) + 'T18:00',
+      after_cutoff: 'no refund; transferable by text (reply SWAP)',
+    }, null, 2);
+    bookedSig = bookingSig();
+    const done = document.getElementById('step-done');
+    done.hidden = false; done.scrollIntoView({ behavior: 'smooth', block: 'start' }); done.focus({ preventScroll: true });
+  }
   document.getElementById('copy-link').onclick = e => {
     try { navigator.clipboard.writeText('https://' + document.getElementById('invite-link').textContent); e.target.textContent = 'Copied'; } catch (err) {}
   };
@@ -1686,9 +2124,12 @@
     const price = FLAGS.fillDiscount
       ? `${price$(perPerson(PRICE))} each, ${price$(perPerson(DISCOUNT_PRICE))} if the boat fills`
       : `${price$(perPerson(PRICE))} each`;
-    const w = state.window && windowsFor(state.date).find(x => x.key === state.window);
-    const win = w ? ` · ${w.name} (${w.point ? 'about ' + fmt(w.start) : fmt(w.start) + ' – ' + fmt(w.end)})` : '';
-    const bk = state.backups.size ? ` · backups: ${windowsFor(state.date).filter(x => state.backups.has(x.key)).map(x => x.name).join(', ')}` : '';
+    const timeMode = FLAGS.mode === 'time', list = timeMode ? boatsFor(state.date) : windowsFor(state.date);
+    const w = state.window && list.find(x => x.key === state.window);
+    const win = !w ? '' : timeMode ? ` · the ${w.name} boat` : ` · ${w.name} (${w.point ? 'about ' + fmt(w.start) : fmt(w.start) + ' – ' + fmt(w.end)})`;
+    const bk = !state.backups.size ? '' : timeMode
+      ? ` · would also go: ${PREFS.filter(p => state.backups.has(p.key)).map(p => p.name.toLowerCase()).join(', ')}`
+      : ` · backups: ${list.filter(x => state.backups.has(x.key)).map(x => x.name).join(', ')}`;
     const dg = state.dogs ? ` + ${state.dogs} dog${state.dogs === 1 ? '' : 's'}` : '';
     renderPay();
     const gf = gearFee(), wt = gf.fee ? ` + $${gf.fee} for extra weight` : '';
