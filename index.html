@@ -155,6 +155,43 @@
   /* Booking variation: window wording vs specific-time wording */
   body.mode-time .m-window { display: none !important; }
   body:not(.mode-time) .m-time { display: none !important; }
+  /* Routes other than the Express: step 3 lists trips (or asks a time); Express-only bits hide */
+  body.route-alt #step-window .m-time, body.route-alt #step-window .m-window, body.route-alt #step-flex { display: none !important; }
+  body:not(.route-alt) .r-alt { display: none !important; }
+
+  /* ---- step 1: where ---- */
+  .routes { display: grid; gap: 10px; }
+  .route {
+    display: grid; gap: 4px; width: 100%; text-align: left; font: inherit; color: var(--ink); cursor: pointer;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--card); padding: 16px 16px; min-height: 64px;
+  }
+  .route:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .route[aria-pressed="true"] { background: var(--soft); border-color: var(--accent); }
+  .route b { font-size: 17px; }
+  .route span { color: var(--muted); font-size: 14px; }
+  .route-group { display: grid; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); }
+  .route-group .group-h { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink); padding: 2px 4px 0; }
+  .route.charter { margin-top: 6px; border: 2px dashed var(--accent); background: transparent; }
+  .route.charter .tag2 { color: var(--ink); }
+  .route.charter[aria-pressed="true"] { background: var(--soft); border-style: solid; }
+  .route .tag2 { justify-self: start; font-size: 12px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+  .where-else { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+  .where-else label { display: grid; gap: 4px; font-weight: 600; font-size: 15px; }
+  .where-else select, .pdock input, .alt-time input {
+    font: inherit; font-size: 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); width: 100%;
+  }
+  .pdock { margin-top: 12px; padding: 14px; border: 1px solid var(--accent); border-radius: 10px; background: var(--soft); display: grid; gap: 10px; }
+  .pdock label { display: grid; gap: 4px; font-weight: 600; font-size: 15px; }
+  .pdock .photo { border: 2px dashed var(--line); border-radius: 8px; padding: 18px; text-align: center; color: var(--muted); font-size: 14px; background: var(--card); }
+  .pdock button, .alt-time button { justify-self: start; font: inherit; border: 0; border-radius: 999px; padding: 10px 18px; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  .pdock button:disabled { opacity: .5; cursor: default; }
+  .saved-dock { margin-top: 12px; font-size: 14px; color: var(--muted); }
+  .saved-dock b { color: var(--ink); }
+  .linkish { font: inherit; font-size: 14px; background: none; border: 0; color: var(--accent); text-decoration: underline; cursor: pointer; padding: 0; }
+  .alt-time { display: grid; gap: 10px; }
+  .alt-time label { display: grid; gap: 4px; font-weight: 600; font-size: 15px; }
+  #route-dir { margin: 10px 0 0; }
+  .sms-h { font-size: 17px; margin: 26px 0 4px; }
 
   /* ---- step 3: backups ---- */
   .first-pick { padding: 12px 14px; background: var(--soft); border-radius: 8px; margin-bottom: 12px; }
@@ -418,7 +455,7 @@
     <summary><span class="tag">Demo variations</span><span id="var-sum"></span></summary>
     <div class="var-grid">
       <div class="var"><span class="var-l">Fuel</span>
-        <div class="seg" data-var="fuel"><button type="button" data-v="flat">Flat surcharge</button><button type="button" data-v="tracked">Tracks diesel</button></div></div>
+        <div class="seg" data-var="fuel"><button type="button" data-v="flat">20% surcharge</button><button type="button" data-v="tracked">Tracks diesel</button></div></div>
       <div class="var"><span class="var-l">Booking</span>
         <div class="seg" data-var="mode"><button type="button" data-v="window">Book into a window</button><button type="button" data-v="time">Book a specific time</button></div></div>
       <div class="var m-window"><span class="var-l">Windows</span>
@@ -488,11 +525,38 @@
     </details>
   </div>
 
-  <!-- STEP 1 — the passenger's mental model: "I have a date in mind, and I know roughly who's coming." -->
-  <section class="step" id="step-date">
+  <!-- STEP 1 — where before when (Tim, 2026-10-07/08): the route decides which days and times exist,
+       and it's what lets riders onto the legs the boat is running anyway. -->
+  <section class="step" id="step-route">
     <div class="step-n">Step 1</div>
-    <h2>Which Sunday are you heading home?</h2>
-    <p class="hint">Highlighted days have boats. Long weekends run on the Monday.</p>
+    <h2>Where are you going?</h2>
+    <p class="hint">Popular runs first. Tap one.</p>
+    <div class="routes" id="routes">
+      <div class="route-group"><div class="group-h">Friday evening</div>
+        <button type="button" class="route" data-route="friday"><span class="tag2">The run up</span><b>Horseshoe Bay → Keats (Eastbourne)</b><span>A late Friday boat over for the weekend. One set time, leaving after work. <span class="tbc">TBC with Eric</span></span></button>
+      </div>
+      <div class="route-group"><div class="group-h">Sunday Express</div>
+      <button type="button" class="route" data-route="express"><span class="tag2">The run home</span><b>Keats (Eastbourne) → Horseshoe Bay</b><span>The Sunday boat home, direct. About 30 minutes on the water.</span></button>
+      <button type="button" class="route" data-route="over"><span class="tag2">Return ride</span><b>Horseshoe Bay → Keats (Eastbourne)</b><span>Seats on a boat that's already making the trip: the runs over before each extra Sunday boat, and runs home after drop-offs. Same fare as the Express.</span></button>
+      </div>
+      <button type="button" class="route charter" data-route="gibsons"><span class="tag2">Charter</span><b>Anywhere: Nanaimo, Texada, downtown, Squamish</b><span>The whole boat, when you want it. Pick where from and where to, see the price, and Jenny confirms by text.</span></button>
+    </div>
+    <div class="seg" id="route-dir" hidden></div>
+
+    <h3 class="sms-h">Somewhere else: charter the boat</h3>
+    <div class="where-else">
+      <label>From <select id="r-from"></select></label>
+      <label>To <select id="r-to"></select></label>
+    </div>
+    <div id="pdock"></div>
+    <p class="hint" style="margin-top:12px">Anything other than the Friday and Sunday runs is a charter. Docks and prices from SCWT's posted rate card.</p>
+  </section>
+
+  <!-- STEP 2 — the passenger's mental model: "I have a date in mind, and I know roughly who's coming." -->
+  <section class="step pending" id="step-date">
+    <div class="step-n">Step 2</div>
+    <h2 id="date-h">Which Sunday are you heading home?</h2>
+    <p class="hint" id="date-hint">Highlighted days have boats. Long weekends run on the Monday.</p>
 
     <div class="cal" id="cal"></div>
     <p class="legend"><span class="sw"></span> boat days</p>
@@ -535,7 +599,9 @@
   <!-- Later steps: placeholders until thought through -->
   <!-- STEP 2 — the passenger's mental model: "how late can I stay?" — pick a window, not a time -->
   <section class="step pending" id="step-window">
-    <div class="step-n">Step 2</div>
+    <div class="step-n">Step 3</div>
+    <h2 class="r-alt" id="alt-h"></h2>
+    <p class="hint r-alt" id="alt-hint"></p>
     <h2 class="m-window">When would you like to leave?</h2>
     <p class="hint m-window">Pick the part of the day. We set the exact boat time once we know who's coming.</p>
     <h2 class="m-time">Which boat?</h2>
@@ -574,7 +640,7 @@
 
   <!-- STEP 3 — strength of preference is behavioural: the backups you tick are how firm you are. -->
   <section class="step pending" id="step-flex">
-    <div class="step-n">Step 3</div>
+    <div class="step-n">Step 4</div>
     <h2 class="m-window">Happy to take another boat if it helps one fill?</h2>
     <p class="hint m-window">Your first pick stays your first pick. Tick anything else that would also work.</p>
     <h2 class="m-time" id="flex-h">Would another time suit you better?</h2>
@@ -612,7 +678,7 @@
 
   <!-- STEP 4 — who's travelling. The mobile is the whole channel: boat time, check-in, swaps. No account. -->
   <section class="step pending" id="step-contact">
-    <div class="step-n">Step 4</div>
+    <div class="step-n">Step 5</div>
     <h2>Who's the lead passenger?</h2>
     <p class="hint">We text the boat time and any changes to this number. No app, no account.</p>
     <div class="fields">
@@ -636,7 +702,7 @@
 
   <!-- STEP 5 — the deal in four sentences, the price, and a card on file. Charged when the boat is confirmed. -->
   <section class="step pending" id="step-pay">
-    <div class="step-n">Step 5</div>
+    <div class="step-n">Step 6</div>
     <h2>Check the deal and add a card</h2>
     <ol class="deal" id="deal"></ol>
     <table class="cost" id="pay-sum"></table>
@@ -677,6 +743,11 @@
     <p class="hint"><span id="texts-for">For the booking above, on the real dates.</span> Pick how the week goes:</p>
     <div class="seg" id="story-seg"></div>
     <div class="sms" id="sms"></div>
+
+    <!-- Booking flow idea 1 (Tim, 2026-10-07): book by text, for account holders with a card on file. -->
+    <h3 class="sms-h">Or book by text</h3>
+    <p class="hint">For riders with an account and a card on file. Plain SMS, so it also works over satellite texting (built into recent iPhones) where cell coverage is patchy.</p>
+    <div class="sms" id="sms-book"></div>
   </section>
 
 </main>
@@ -746,10 +817,11 @@
   } catch (e) {}
   document.getElementById('fill-at').textContent = FILL_AT;
 
-  const VAR_VALUE = { season: () => state.date ? dayKind(state.date) : '', demand: () => FLAGS.demand, mode: () => FLAGS.mode, fuel: () => FLAGS.fuel, fee: () => String(FLAGS.fee), disc: () => FLAGS.fillDiscount ? '1' : '0', scheme: () => FLAGS.scheme, busy: () => FLAGS.busy ? '1' : '0' };
+  const VAR_VALUE = { route: () => state.route === 'request' ? 'gibsons' : state.route || '', season: () => state.date ? dayKind(state.date) : 'oth', demand: () => FLAGS.demand, mode: () => FLAGS.mode, fuel: () => FLAGS.fuel, fee: () => String(FLAGS.fee), disc: () => FLAGS.fillDiscount ? '1' : '0', scheme: () => FLAGS.scheme, busy: () => FLAGS.busy ? '1' : '0' };
   document.querySelectorAll('.variations .seg').forEach(seg => seg.querySelectorAll('button').forEach(b => b.onclick = () => {
     const k = seg.dataset.var, v = b.dataset.v;
-    if (k === 'season') { pickSeason(v); return applyScenario(); }
+    if (k === 'route') { setRoute(...QUICK[v]); return applyScenario(); }
+    if (k === 'season') { if (!state.route) setRoute(...QUICK.express); pickSeason(v); return applyScenario(); }
     if (k === 'demand') {
       FLAGS.demand = v; story = null;
       if (state.date && state.window && !visibleBoats(state.date).some(x => x.key === state.window)) { state.window = null; state.backups.clear(); }
@@ -765,9 +837,11 @@
   function applyScenario() {
     document.body.classList.toggle('discount', FLAGS.fillDiscount);
     document.body.classList.toggle('mode-time', FLAGS.mode === 'time');
+    document.body.classList.toggle('route-alt', isAlt());
+    renderRoute();
     document.querySelectorAll('.variations .seg').forEach(seg => seg.querySelectorAll('button').forEach(b =>
       b.setAttribute('aria-pressed', b.dataset.v === VAR_VALUE[seg.dataset.var]())));
-    document.getElementById('var-sum').textContent = [FLAGS.fuel === 'flat' ? 'flat fuel' : 'fuel tracks diesel',
+    document.getElementById('var-sum').textContent = [FLAGS.fuel === 'flat' ? '20% fuel surcharge' : 'fuel tracks diesel',
       ...(FLAGS.fillDiscount ? ['fill discount'] : []), FLAGS.mode === 'time' ? `specific times · ${{ typical: 'typical demand', full: 'first boat full', extra: 'extra boat open' }[FLAGS.demand]}` : `windows ${FLAGS.scheme === 'clock' ? 'A' : 'B'}`, ...(FLAGS.busy && FLAGS.mode !== 'time' ? ['busy Sunday'] : [])].join(' · ');
     try {
       localStorage.setItem('scenario.fillDiscount', FLAGS.fillDiscount ? '1' : '0');
@@ -777,7 +851,7 @@
       localStorage.setItem('scenario.busy', FLAGS.busy ? '1' : '0');
       localStorage.setItem('scenario.demand', FLAGS.demand);
     } catch (e) {}
-    renderWindows(); renderBackups(); renderPicked(); renderTexts();
+    renderWindows(); renderBackups(); renderPicked(); renderTexts(); renderBookByText();
     renderModel();   // also re-renders the price, since tracked fuel reads the model's sliders
   }
 
@@ -786,7 +860,10 @@
   // Fuel at cost: this week's diesel × litres for the trip (counting the boat's empty run back),
   // shared across an average boat. Also used by the model's fuel card.
   const trackedFuel = (S, f) => S.diesel * S.litres * (1 + f.empty) / f.ppl;
-  const fuelCharge = () => FLAGS.fuel === 'flat' ? M.fuel.flat : trackedFuel(M.shared, M.fuel);
+  // SCWT's fuel surcharge is a percentage of the fare: ~20% now (Jenny, 2026-10-08). $35 + 20% = $42,
+  // which is what Bookeo shows riders paying, so the $42 already included fuel.
+  const FUEL_PCT = 0.20;
+  const fuelCharge = () => FLAGS.fuel === 'flat' ? PRICE * FUEL_PCT : trackedFuel(M.shared, M.fuel);
   const perPerson = fare => fare + fuelCharge() + FLAGS.fee;
 
   function renderPrice() {
@@ -795,15 +872,15 @@
       ? `${price$(perPerson(PRICE))} per person, or ${price$(perPerson(DISCOUNT_PRICE))} each when the boat fills.`
       : `${price$(perPerson(PRICE))} per person, one way.`;
     document.getElementById('price-sub').textContent =
-      `$${PRICE} fare${FLAGS.fillDiscount ? ` ($${DISCOUNT_PRICE} when full)` : ''} + ${price$(fuel)} fuel${tracked ? " at this week's diesel price" : ''} + $${fee} booking fee`;
+      `$${PRICE} fare${FLAGS.fillDiscount ? ` ($${DISCOUNT_PRICE} when full)` : ''} + ${price$(fuel)} fuel${tracked ? " at this week's diesel price" : ` (${Math.round(FUEL_PCT * 100)}%)`} + $${fee} booking fee`;
     const litres = Math.round(S.litres * (1 + f.empty));
     const fuelWhy = tracked
       ? `<p><b>Fuel is charged at what it costs.</b> This week marine diesel is ${price$(S.diesel)} a litre. A trip burns about ${litres} litres${f.empty ? ", counting the boat's run back" : ''}, shared across an average boat of ${f.ppl}: ${price$(fuel)} each. When diesel goes down, so does this line. It's reset every Monday <span class="tbc">TBC</span>, and the fuel price on the day you book is the one you pay.</p>`
-      : `<p><b>Fuel is a flat ${price$(fuel)} per person</b> <span class="tbc">TBC: ask Eric</span>, on top of the fare. The price you see when you book is the price you pay.</p>`;
+      : `<p><b>Fuel surcharge: ${Math.round(FUEL_PCT * 100)}% of the fare, ${price$(fuel)} per person.</b> Diesel has gone up for every operator on the coast, and this is the same surcharge SCWT adds to every trip. We show it on its own line so you can see exactly what it is; when diesel comes down, so does this line. The price you see when you book is the price you pay.</p>`;
     document.getElementById('cost-a').innerHTML = `
       <table class="cost">
         <tr><td>Fare${FLAGS.fillDiscount ? `<small>$${DISCOUNT_PRICE} when the boat fills</small>` : ''}</td><td>$${PRICE}</td></tr>
-        <tr><td>Fuel<small>${tracked ? "this week's diesel price" : 'flat surcharge'}</small></td><td>${price$(fuel)}</td></tr>
+        <tr><td>Fuel surcharge<small>${tracked ? "this week's diesel price" : `${Math.round(FUEL_PCT * 100)}% of the fare`}</small></td><td>${price$(fuel)}</td></tr>
         <tr><td>Booking fee</td><td>$${fee}</td></tr>
         <tr class="total"><td>Per person, one way${FLAGS.fillDiscount ? `<small>${price$(perPerson(DISCOUNT_PRICE))} when the boat fills</small>` : ''}</td><td>${price$(perPerson(PRICE))}</td></tr>
       </table>
@@ -823,11 +900,214 @@
   function isOpen(d) {
     const diff = (d - TODAY) / 864e5;
     if (diff < 0 || diff > HORIZON_DAYS) return false;
-    return d.getDay() === 0 || EXTRA_OPEN.includes(iso(d));
+    if (state.route === 'request') return true;   // on request: any day, Jenny confirms
+    if (state.route === 'friday') return d.getDay() === 5;   // the late Friday run up
+    if (EXTRA_OPEN.includes(iso(d))) return true;
+    // Long weekends run the Monday only, not the Sunday (Tim, 2026-10-08).
+    const next = new Date(d); next.setDate(d.getDate() + 1);
+    return d.getDay() === 0 && !EXTRA_OPEN.includes(iso(next));
   }
 
   // ---- Calendar (month view, single select)
-  const state = { month: new Date(TODAY.getFullYear(), TODAY.getMonth(), 1), date: null, party: 1, dogs: 0, gear: 50, window: null, backups: new Set() };
+  // route: express | over | request (null until step 1). alt: the trip or time picked on a non-Express route.
+  const state = { month: new Date(TODAY.getFullYear(), TODAY.getMonth(), 1), date: null, party: 1, dogs: 0, gear: 50, window: null, backups: new Set(),
+                  route: null, from: '', to: '', alt: null, editDock: false };
+
+  // ---- Step 1: where. Demo routes and docks, to confirm with Jenny.
+  // Charter area (Jenny, 2026-10-08): as far as Nanaimo, Texada, downtown Vancouver and Squamish.
+  // Docks are the ones on SCWT's rate card (sunshinecoastwatertaxi.ca/rates.html), plus the far ends.
+  const DOCKS = [['gibsons', 'Gibsons'], ['langdale', 'Langdale'], ['hsb', 'Horseshoe Bay'],
+                 ['keats', 'Keats Landing'], ['eastbourne', 'Eastbourne'],
+                 ['newbrighton', 'New Brighton (Gambier)'], ['gambierhbr', 'Gambier Harbour'], ['westbay', 'West Bay (Gambier)'],
+                 ['centrebay', 'Centre Bay (Gambier)'], ['longbay', 'Long Bay / Sea Ranch'], ['halkett', 'Halkett Bay'],
+                 ['fircom', 'Fircom'], ['pasley', 'Pasley Group'], ['mtgardner', 'Mount Gardner (Bowen)'],
+                 ['tunstall', 'Tunstall Bay (Bowen)'], ['brigade', 'Brigade Bay'], ['mcnab', 'McNab Creek'], ['douglas', 'Douglas Bay'],
+                 ['nanaimo', 'Nanaimo'], ['texada', 'Texada'], ['downtown', 'Downtown Vancouver'], ['squamish', 'Squamish'],
+                 ['private', 'A private dock']];
+  // SCWT's posted charter rates: the whole boat, one way, GST included (2026-10-08). Fuel surcharge on top.
+  const CHARTER_RATES = {
+    gibsons: { keats: 80, eastbourne: 135, pasley: 160, newbrighton: 168, gambierhbr: 168, mtgardner: 168, tunstall: 180,
+               westbay: [180, 195], centrebay: 200, longbay: 240, halkett: 260, fircom: 260, hsb: 280, brigade: 300, mcnab: 300,
+               douglas: 325, nanaimo: 650 },
+    langdale: { keats: 140, newbrighton: 170, gambierhbr: 170, eastbourne: 175, hsb: 290 },
+    hsb: { eastbourne: 280, keats: 290, halkett: 290, fircom: 290, gambierhbr: 295, newbrighton: 300, westbay: [300, 320],
+           centrebay: 300, longbay: 300, pasley: 330, mcnab: 495 },
+  };
+  const FUEL_SURCHARGE = 0.20;   // Jenny: "hovering around 20%" (2026-10-08); same as FUEL_PCT for the Express
+  const QUICK = { express: ['eastbourne', 'hsb'], over: ['hsb', 'eastbourne'], friday: ['hsb', 'eastbourne', 'friday'], gibsons: ['gibsons', 'keats'] };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let savedDock = null;   // saved docks (idea 9): name + how to spot it; mock only, no real upload or map
+  try { savedDock = JSON.parse(localStorage.getItem('saved.dock') || 'null'); } catch (e) {}
+  const dockName = k => k === 'private' ? (savedDock ? savedDock.name : 'a private dock') : (DOCKS.find(x => x[0] === k) || [, ''])[1];
+  const isAlt = () => !!state.route && state.route !== 'express';
+  function setRoute(from, to, forced) {
+    state.from = from; state.to = to;
+    state.route = forced ? forced : !from || !to || from === to ? null
+      : from === 'eastbourne' && to === 'hsb' ? 'express' : from === 'hsb' && to === 'eastbourne' ? 'over' : 'request';
+    state.window = null; state.backups.clear(); state.alt = null; story = null;
+    if (state.date && !isOpen(state.date)) state.date = null;
+    renderCal();
+  }
+  function renderRoute() {
+    const r = state.route, gib = r === 'request' && [state.from, state.to].sort().join() === 'gibsons,keats';
+    document.querySelectorAll('#routes .route').forEach(b => b.setAttribute('aria-pressed',
+      b.dataset.route === 'gibsons' ? r === 'request' : b.dataset.route === r));
+    const dir = document.getElementById('route-dir');
+    dir.hidden = true; void gib;
+    if (gib) {
+      dir.innerHTML = [['gibsons', 'keats', 'Gibsons → Keats'], ['keats', 'gibsons', 'Keats → Gibsons']].map(([f, t, l]) =>
+        `<button type="button" data-f="${f}" data-t="${t}" aria-pressed="${state.from === f}">${l}</button>`).join('');
+      dir.querySelectorAll('button').forEach(b => b.onclick = () => { setRoute(b.dataset.f, b.dataset.t); applyScenario(); });
+    }
+    const opts = sel => `<option value="">Choose a dock</option>` + DOCKS.map(([k, n]) =>
+      `<option value="${k}" ${sel === k ? 'selected' : ''}>${k === 'private' && savedDock ? 'Saved: ' + esc(savedDock.name) : n}</option>`).join('');
+    const rf = document.getElementById('r-from'), rt = document.getElementById('r-to');
+    rf.innerHTML = opts(state.from); rt.innerHTML = opts(state.to);
+    rf.onchange = rt.onchange = () => { setRoute(rf.value, rt.value); applyScenario(); };
+    // Private dock: the first time, a small card asks for it; after that it's a saved dock.
+    const pd = document.getElementById('pdock'), priv = state.from === 'private' || state.to === 'private';
+    if (!priv) pd.innerHTML = '';
+    else if (!savedDock || state.editDock) {
+      pd.innerHTML = `<div class="pdock">
+        <b>Tell us about your dock</b>
+        <label>Dock name <input id="pd-name" placeholder="e.g. The Hendersons', Plumper Cove side" value="${esc(savedDock?.name || '')}"></label>
+        <div class="photo">📷 Add a photo of the dock from the water<br><small>(demo: no upload)</small></div>
+        <label>How do we spot it? <input id="pd-spot" placeholder="e.g. red kayak rack, white float" value="${esc(savedDock?.spot || '')}"></label>
+        <label>GPS coordinates <input id="pd-gps" inputmode="decimal" placeholder="e.g. 49.40620, -123.42580" value="${esc(savedDock?.gps || '')}"></label>
+        <button type="button" class="linkish" id="pd-here">📍 Use my location (standing on the dock)</button>
+        <button type="button" id="pd-save">Save this dock</button>
+        <span class="hint" style="margin:0">Saved to your account, so next time it's one tap. The skipper gets the exact spot. <span class="tbc">Demo: a map pin comes later</span></span></div>`;
+      document.getElementById('pd-here').onclick = () => {
+        const gps = document.getElementById('pd-gps');
+        if (!navigator.geolocation) { gps.placeholder = 'Location not available here'; return; }
+        gps.placeholder = 'Finding you…';
+        navigator.geolocation.getCurrentPosition(
+          pos => { gps.value = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`; },
+          () => { gps.placeholder = 'Couldn\'t get your location; type it in'; },
+          { enableHighAccuracy: true, timeout: 10000 });
+      };
+      const nm = document.getElementById('pd-name'), btn = document.getElementById('pd-save');
+      const ok = () => btn.disabled = !nm.value.trim();
+      nm.oninput = ok; ok();
+      btn.onclick = () => {
+        savedDock = { name: nm.value.trim(), spot: document.getElementById('pd-spot').value.trim(), gps: document.getElementById('pd-gps').value.trim(), status: 'pending' };
+        try { localStorage.setItem('saved.dock', JSON.stringify(savedDock)); } catch (e) {}
+        state.editDock = false; applyScenario();
+      };
+    } else {
+      // A new dock waits for Jenny: she checks it's on the way (not too far off the run) before it's bookable.
+      const st = savedDock.status || 'approved';
+      const badge = st === 'pending'
+        ? `<p class="saved-dock"><b>Waiting for Jenny's OK.</b> New docks are checked once, to make sure they're not too far off the run. You'll get a text; your booking is held until then. <span class="tbc">Demo:</span> <button type="button" class="linkish" id="pd-ok">Jenny approves</button> · <button type="button" class="linkish" id="pd-far">Jenny: too far</button></p>`
+        : st === 'far'
+          ? `<p class="saved-dock"><b>Jenny says this dock is too far off the run.</b> She'll text you a charter price, or meet the boat at the nearest public dock.</p>`
+          : `<p class="saved-dock"><b>Approved by Jenny.</b> Bookable any time now.</p>`;
+      pd.innerHTML = badge + `<p class="saved-dock"><b>Saved: ${esc(savedDock.name)}</b>${savedDock.spot ? ` · look for ${esc(savedDock.spot)}` : ''}${savedDock.gps ? ` · 📍 <a href="https://maps.apple.com/?ll=${encodeURIComponent(savedDock.gps.replace(/\s+/g, ''))}&q=${encodeURIComponent(savedDock.name)}" target="_blank" rel="noopener">${esc(savedDock.gps)}</a>` : ''} · photo on file. The skipper sees this. <button type="button" class="linkish" id="pd-edit">Change</button> · <button type="button" class="linkish" id="pd-forget">Forget it (demo reset)</button></p>`;
+      document.getElementById('pd-edit').onclick = () => { state.editDock = true; renderRoute(); };
+      const setStatus = v => { savedDock.status = v; try { localStorage.setItem('saved.dock', JSON.stringify(savedDock)); } catch (e) {} renderRoute(); };
+      const okBtn = document.getElementById('pd-ok'), farBtn = document.getElementById('pd-far');
+      if (okBtn) okBtn.onclick = () => setStatus('approved');
+      if (farBtn) farBtn.onclick = () => setStatus('far');
+      document.getElementById('pd-forget').onclick = () => { savedDock = null; try { localStorage.removeItem('saved.dock'); } catch (e) {} applyScenario(); };
+    }
+    // Step 2's wording follows the route.
+    const H = { express: ['Which Sunday are you heading home?', 'Highlighted days have boats. Long weekends run on the Monday.'],
+                over: ['Which Sunday are you heading over?', "Highlighted days are Express days: the boat crosses from Horseshoe Bay to pick people up, so there are seats going your way."],
+                friday: ['Which Friday are you heading up?', 'Highlighted days are Fridays with the evening run.'],
+                request: ['Which day?', 'Any day. Charters run when you want: pick a time next, and Jenny confirms by text.'] }[r || 'express'];
+    document.getElementById('date-h').textContent = H[0];
+    document.getElementById('date-hint').textContent = H[1];
+    document.getElementById('step-date').classList.toggle('pending', !r);
+  }
+  document.querySelectorAll('#routes .route').forEach(b => b.onclick = () => {
+    // Charter: no preset route; jump to the from/to pickers.
+    if (b.dataset.route === 'gibsons') {
+      if (state.route !== 'request') setRoute('', '');
+      applyScenario();
+      const rf = document.getElementById('r-from');
+      rf.scrollIntoView?.({ behavior: 'smooth', block: 'center' }); rf.focus();
+      return;
+    }
+    setRoute(...QUICK[b.dataset.route]); applyScenario();
+  });
+
+  // ---- Step 3 on the other routes.
+  // Ride over: each Express boat after the first means the boat crosses from Horseshoe Bay to fetch it
+  // (the hidden empty legs, pain-points 2026-09-15); after the last drop-off it runs home (Eric, 2026-09-30).
+  const OVER_LEAD = 40;   // leaves Horseshoe Bay this long before the Express pickup it's going for — TBC with Eric
+  function overTrips(d) {
+    const bs = visibleBoats(d).filter(b => boatState(d, b).open).sort((a, b) => a.t - b.t), out = [];
+    bs.slice(1).forEach((b, i) => out.push({ key: 'o' + b.t, t: b.t - OVER_LEAD, why: `coming over for the ${b.name} pickup`, booked: (d.getDate() + i) % 4 }));
+    const last = bs[bs.length - 1];
+    if (last) out.push({ key: 'home', t: last.t + 35, why: `the run home after the ${last.name} drop-off`, booked: d.getDate() % 3, tbc: 'stop at Eastbourne on the way to Gibsons: TBC with Eric' });
+    return out;
+  }
+  function renderAlt() {
+    const box = document.getElementById('windows'), note = document.getElementById('lastboat-note');
+    const h = document.getElementById('alt-h'), hint = document.getElementById('alt-hint'), D = state.date;
+    if (state.route === 'friday') {
+      h.textContent = 'The Friday evening run';
+      hint.textContent = 'One set boat over for the weekend, leaving Horseshoe Bay after work. Booked means going.';
+    } else if (state.route === 'over') {
+      h.textContent = 'Seats on a boat already going your way';
+      hint.textContent = 'These boats are crossing to Eastbourne anyway, to pick up the Express. Book a seat and ride over.';
+    } else {
+      h.textContent = 'Charter: the whole boat, when you want it';
+      hint.textContent = "Pick a time. Jenny confirms by text, and nothing is charged until she does.";
+    }
+    if (!D) { box.innerHTML = ''; note.textContent = ''; return; }
+    const sunset = `<b>Sunset ${fmt(Math.round(sunsetMin(D)))}.</b>`;
+    if (state.route === 'friday') {
+      // Demo: the last grid slot before the sunset margin, but never before 4:45 (after work). Time TBC with Eric.
+      const t = Math.max(lastBoatMin(D), 16 * 60 + 45), booked = (D.getDate() * 3) % 9;
+      box.innerHTML = `<button type="button" class="win ${state.alt === 'fri' ? 'selected' : ''}" data-key="fri" aria-pressed="${state.alt === 'fri'}">
+        <span class="name">${fmt(t)} <small>· from Horseshoe Bay</small></span><span class="time">going</span>
+        <span class="status">the Friday run up · <span class="go">${SEATS - booked} seats open</span> · <span class="tbc">time TBC with Eric</span></span></button>`;
+      note.innerHTML = `${sunset} Same fare as the Sunday Express.`;
+      box.querySelector('.win').onclick = () => { state.alt = 'fri'; renderWindows(); renderPicked(); };
+    } else if (state.route === 'over') {
+      const trips = overTrips(D);
+      box.innerHTML = trips.map(x => `<button type="button" class="win ${state.alt === x.key ? 'selected' : ''}" data-key="${x.key}" aria-pressed="${state.alt === x.key}">
+        <span class="name">${fmt(x.t)} <small>· from Horseshoe Bay</small></span><span class="time">already going</span>
+        <span class="status">${x.why} · <span class="go">${SEATS - x.booked} seats open</span>${x.tbc ? ` · <span class="tbc">${x.tbc}</span>` : ''}</span></button>`).join('');
+      note.innerHTML = `${sunset} Times are when the boat leaves Horseshoe Bay <span class="tbc">TBC</span>. More trips over appear as extra Sunday boats open. Same fare as the Express.`;
+      box.querySelectorAll('.win').forEach(b => b.onclick = () => { state.alt = b.dataset.key; renderWindows(); renderPicked(); });
+    } else {
+      box.innerHTML = `<div class="alt-time">
+        <label>Preferred time <input type="time" id="alt-t" step="900" value="${state.alt || ''}"></label>
+        <button type="button" id="alt-go">Ask for this time</button>
+        ${state.alt ? `<p class="first-pick" style="margin:0"><b>Requested: ${fmt(toMin24(state.alt))}, ${esc(dockName(state.from))} → ${esc(dockName(state.to))}</b><span>Jenny texts to confirm the time, or offers the nearest she can do. Nothing is charged until she confirms.</span></p>` : ''}
+      </div>`;
+      note.innerHTML = `${sunset} Boats run in daylight.` + charterCard();
+      document.getElementById('alt-go').onclick = () => { const v = document.getElementById('alt-t').value; if (v) { state.alt = v; renderWindows(); renderPicked(); } };
+    }
+  }
+  // Charter price from the posted rate card, either direction.
+  function charterRate(a, b) {
+    const r = (CHARTER_RATES[a] || {})[b] ?? (CHARTER_RATES[b] || {})[a];
+    return r === undefined ? null : Array.isArray(r) ? r : [r, r];
+  }
+  const cash = n => '$' + Math.round(n).toLocaleString('en-CA');
+  function charterCard() {
+    const n = state.party || 1, rate = charterRate(state.from, state.to);
+    const route = `${esc(dockName(state.from))} → ${esc(dockName(state.to))}`;
+    if (!rate) return `<div class="pdock" style="margin-top:12px">
+      <b>Charter: ${route}</b>
+      <p style="margin:6px 0">Not on the posted rate card, so Jenny quotes this one: you'll get a price by text before anything is booked. SCWT goes as far as Nanaimo, Texada, downtown Vancouver and Squamish.</p></div>`;
+    const [lo, hi] = rate, fuelLo = lo * FUEL_SURCHARGE, fuelHi = hi * FUEL_SURCHARGE;
+    const range = (a, b) => a === b ? cash(a) : `${cash(a)}–${cash(b)}`;
+    const totLo = lo + fuelLo, totHi = hi + fuelHi;
+    return `<div class="pdock" style="margin-top:12px">
+      <b>Charter: ${route}</b>
+      <table class="tot" style="width:100%">
+        <tr><td>The whole boat, one way<small>SCWT's posted rate, GST included</small></td><td>${range(lo, hi)}</td></tr>
+        <tr><td>Fuel surcharge<small>about 20% right now; it moves with diesel</small></td><td>${range(fuelLo, fuelHi)}</td></tr>
+        <tr><td><b>Total</b></td><td><b>${range(totLo, totHi)}</b></td></tr>
+      </table>
+      <p style="margin:6px 0">${n > 1 ? `Split ${n} ways, about ${range(totLo / n, totHi / n)} each.` : 'Bring friends: the price is for the boat, up to 12.'}${n > 6 ? ' <b>Over 6 people adds a group surcharge</b> <span class="tbc">amount TBC with Jenny</span>.' : ''}</p>
+      <p class="hint" style="margin:6px 0 0">Up to 12 passengers. Beach landing $35 · standby $120/hour · after dark and large freight cost extra. Rates from sunshinecoastwatertaxi.ca.</p></div>`;
+  }
+  const toMin24 = v => { const [h, m] = v.split(':').map(Number); return h * 60 + m; };
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const cal = document.getElementById('cal');
@@ -857,7 +1137,7 @@
     document.getElementById('next').onclick = () => { state.month = new Date(m.getFullYear(), m.getMonth()+1, 1); renderCal(); };
     cal.querySelectorAll('.day.open').forEach(b => b.onclick = () => {
       const [y,mo,da] = b.dataset.iso.split('-').map(Number);
-      state.date = new Date(y, mo-1, da); state.window = null; state.backups.clear();
+      state.date = new Date(y, mo-1, da); state.window = null; state.backups.clear(); state.alt = null;
       renderCal(); applyScenario();
     });
   }
@@ -937,6 +1217,7 @@
   }
 
   function renderWindows() {
+    if (isAlt()) return renderAlt();
     if (FLAGS.mode === 'time') return renderTimes();
     const box = document.getElementById('windows'), note = document.getElementById('lastboat-note');
     if (!state.date) { box.innerHTML = ''; note.textContent = ''; return; }
@@ -1327,7 +1608,7 @@
   function toMin(t) { const m = /(\d+)(?::(\d+))? (am|pm)/.exec(t); const h = +m[1] % 12 + (m[3] === 'pm' ? 12 : 0); return h * 60 + (+m[2] || 0); }
 
   // Until a date and window are picked, the texts use an example booking so they can be shown any time.
-  function sampleDate() { const d = new Date(TODAY); d.setDate(d.getDate() + 7); while (!isOpen(d)) d.setDate(d.getDate() + 1); return d; }
+  function sampleDate() { const d = new Date(TODAY); d.setDate(d.getDate() + 7); while (d.getDay() !== 0 && !EXTRA_OPEN.includes(iso(d))) d.setDate(d.getDate() + 1); return d; }   // an Express day, whatever the route
   function renderTexts() {
     if (FLAGS.mode === 'time') return renderTextsTime();
     const box = document.getElementById('sms'), sample = !state.date || !state.window;
@@ -2133,8 +2414,32 @@
     const dg = state.dogs ? ` + ${state.dogs} dog${state.dogs === 1 ? '' : 's'}` : '';
     renderPay();
     const gf = gearFee(), wt = gf.fee ? ` + $${gf.fee} for extra weight` : '';
+    document.getElementById('step-window').classList.remove('pending');
+    if (isAlt()) {
+      const where = `${dockName(state.from)} → ${dockName(state.to)}`;
+      const pick = !state.alt ? '' : state.route === 'friday' ? ' · the Friday evening boat'
+        : state.route === 'over'
+        ? ` · the ${fmt((overTrips(state.date).find(x => x.key === state.alt) || {}).t || 0)} boat over`
+        : ` · asked for ${fmt(toMin24(state.alt))}, Jenny confirms by text`;
+      el.textContent = `${where} · ${nice} · ${state.party} ${state.party === 1 ? 'person' : 'people'}${dg} · ~${state.gear} lb of gear${pick} · ${state.route === 'over' || state.route === 'friday' ? 'same fare as the Express' : 'charter, Jenny confirms'}`;
+      return;
+    }
     el.textContent = `${nice} · ${state.party} ${state.party === 1 ? 'person' : 'people'}${dg} · ~${state.gear} lb of gear${win}${bk} · ${price}${wt}`;
     document.getElementById('step-window').classList.remove('pending');
+  }
+
+  // ---- Book by text (idea 1): an account holder with a card on file, on the island, on the day.
+  function renderBookByText() {
+    const D = sampleDate(), open = visibleBoats(D).map(b => ({ b, s: boatState(D, b) })).filter(x => x.s.open && !x.s.full);
+    const times = open.map(x => `${x.b.name} (${SEATS - x.s.booked} seats)`).join(', ') || 'none with seats left';
+    const pick = open[open.length - 1], day = D.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' });
+    const M = [[day + ' · 1:05 pm', 'Next boat home? 2 of us', '', true],
+      [day + ' · 1:05 pm', `Hi Sam. Boats from Eastbourne to Horseshoe Bay today: ${times}. Reply YES and a time to book${pick ? `, e.g. YES ${pick.b.name}` : ''}.`, 'the account knows the rider, their dock and their card, so a question gets real times back', false]];
+    if (pick) M.push([day + ' · 1:07 pm', `YES ${pick.b.name}`, '', true],
+      [day + ' · 1:07 pm', `Booked: 2 on the ${pick.b.name} boat, ${price$(perPerson(PRICE) * 2)} on the card ending 4242. Be on the Eastbourne dock by ${fmt(pick.b.t - 10)}.`,
+       'one word books it; plain SMS, so it goes through over satellite texting where there is no cell signal', false]);
+    document.getElementById('sms-book').innerHTML = M.map(([when, text, why, mine]) =>
+      `<div class="when">${when}</div><div class="bubble${mine ? ' me' : ''}">${text}</div>${why ? `<div class="why">${why}</div>` : ''}`).join('');
   }
 
   renderCal(); renderParty(); renderDogs(); renderGear(); applyScenario();
